@@ -4,4 +4,4 @@ Introduces techniques of modeling, transformation, and rendering for computer-ge
 # prog0 
 Create an interactive 2D drawing application.
 # prog1
-For this assignment, we will creating surface of revolutions (SOR) and drawing their "skeleton", referred to as wireframes.
+Create a 3D model and render it in wireframe.
