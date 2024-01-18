@@ -2,6 +2,7 @@
 # Program 1 
 
 # General Discription given for Assignment
+For this assignment, we will creating surface of revolutions (SOR) and drawing their "skeleton", referred to as wireframes.
 You will use the output from prog0 as the profile curve for generating the SOR. The SOR will have a unit height along the z-axis from z=0 to z=1. The z=0 plane is the screen i.e. you'll be looking straight down at the top of your SOR. Note that this is different from the canvas coordinates in prog0.
 The coordinates of the profile curve from prog0 will need to changed. First, rescale the min/max canvas x-values to [0..1]. We shall treat these canvas x-values as our SOR z-value. Next, rescale the min/max canvas y-values to [0..1], but with y-axis pointing up. That is, you'll need to change the sign of y. Now that we have the rescaled z and y coordinates of the profile curve. rotate it around the z axis to generate xyz coordinates of the SOR. These points will have the range of [-1..1][-1..1][0..1]. That is, your SOR object will be contained within a 2x2x1 block.
 As the name implies, SORs are defined by a profile (a polyline) that is rotated around an axis of revolution. A simple example of an SOR is a cylinder. Its profile is simply a straight line. As the line is rotated 360 degrees, a cylinder is formed.
