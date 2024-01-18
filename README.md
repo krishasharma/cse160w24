@@ -1,2 +1,3 @@
+# CSE160w/L: Introduction to Computer Graphics
 # cse160w24
-CSE 160/L: Computer Graphics winter 2023-2024
+Introduces techniques of modeling, transformation, and rendering for computer-generated imagery. Topics: 2D/3D primitives, projections, matrix composition, and shading algorithms 
