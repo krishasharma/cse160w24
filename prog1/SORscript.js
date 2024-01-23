@@ -113,13 +113,14 @@ let drawEndCaps = true; // Default to draw end caps
 
 // Function to handle user input
 function handleUserInput() {
-    userSides = parseInt(prompt("Enter the number of sides for the cross-section (e.g., 3 for triangular):"));
-    drawEndCaps = confirm("Draw end caps? (OK for yes, Cancel for no)");
+    // Prompt user for number of sides and end caps choice
+    userSides = parseInt(prompt("Enter the number of sides for the cross-sectional shape (e.g., 3 for triangular):"));
+    drawEndCaps = confirm("Do you want to draw end caps? (OK for yes, Cancel for no)");
 
     // Validate user input for sides (must be a positive integer)
-    if (isNaN(userSides) || userSides <= 0) {
-        alert("Invalid input for sides. Using default value.");
-        userSides = 3; // Default value
+    while (isNaN(userSides) || userSides <= 0) {
+        alert("Invalid input for sides. Please enter a positive integer.");
+        userSides = parseInt(prompt("Enter the number of sides for the cross-sectional shape (e.g., 3 for triangular):"));
     }
 
     // Display user choices
