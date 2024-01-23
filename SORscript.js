@@ -123,6 +123,10 @@ function handleUserInput() {
         userSides = parseInt(prompt("Enter the number of sides for the cross-sectional shape (e.g., 3 for triangular):"));
     }
 
+    // Prompt user for end caps choice
+    const endCapsChoice = confirm("Do you want to draw end caps? (OK for yes, Cancel for no)");
+    drawEndCaps = endCapsChoice;
+
     // Display user choices
     console.log(`User Choices - Sides: ${userSides}, Draw End Caps: ${drawEndCaps}`);
 }
