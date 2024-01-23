@@ -13,11 +13,11 @@ Option to draw or skip end caps.
 
 
 # Files Given
-features.html
-driver.html
-SORscript.js
-sor_coordinates.obj
-sor_polygons.obj
+- features.html
+- driver.html
+- SORscript.js
+- sor_coordinates.obj
+- sor_polygons.obj
 
 # Known Errors 
 There are currently no known errors in this implementation
