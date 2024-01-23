@@ -61,5 +61,54 @@ const chosenPlane = 'XZ';
 // Rotate the profile curve to the chosen plane
 const rotatedProfile = rotateProfileToPlane(webGLCoordinates, chosenPlane);
 
-// Print the rotated profile (you can store it for further processing)
+// Function to generate the Surface of Revolution (SOR)
+function generateSOR(profile, sides) {
+    const sorVertices = [];
+    const sorPolygons = [];
+
+    // Loop to create SOR vertices and polygons
+    for (let i = 0; i <= sides; i++) {
+        const angle = (i / sides) * 2 * Math.PI; // Angle increment based on the number of sides
+
+        // Rotate profile points around the Z-axis
+        for (const point of profile) {
+            const x = point.x * Math.cos(angle);
+            const y = point.x * Math.sin(angle);
+            const z = point.y;
+
+            // Add the rotated point as a vertex
+            sorVertices.push({ x, y, z });
+        }
+
+        // Create polygons by connecting vertices
+        if (i > 0) {
+            const startIndex = (i - 1) * profile.length;
+            const endIndex = i * profile.length;
+
+            for (let j = 0; j < profile.length; j++) {
+                const vertex1 = startIndex + j;
+                const vertex2 = startIndex + (j + 1) % profile.length;
+                const vertex3 = endIndex + j;
+                const vertex4 = endIndex + (j + 1) % profile.length;
+
+                // Create two triangles for each quad
+                sorPolygons.push([vertex1, vertex2, vertex3]);
+                sorPolygons.push([vertex2, vertex4, vertex3]);
+            }
+        }
+    }
+
+    return { vertices: sorVertices, polygons: sorPolygons };
+}
+
+// Number of sides for the SOR (e.g., 3 for triangular cross-section)
+const sides = 3;
+
+// Generate the Surface of Revolution (SOR) using the rotated profile and number of sides
+const sorObject = generateSOR(rotatedProfile, sides);
+
+// Print the SOR vertices and polygons (can store them for later use)
+console.log("SOR Vertices:", sorObject.vertices);
+console.log("SOR Polygons:", sorObject.polygons);
+// Print the rotated profile (can store it for further processing)
 console.log(`Rotated Profile (to ${chosenPlane}-plane):`, rotatedProfile);
