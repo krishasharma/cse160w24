@@ -107,6 +107,31 @@ const sides = 3;
 // Generate the Surface of Revolution (SOR) using the rotated profile and number of sides
 const sorObject = generateSOR(rotatedProfile, sides);
 
+// Variable to store user input for sides and end caps (true for end caps, false for no end caps)
+let userSides = 3; // Default number of sides
+let drawEndCaps = true; // Default to draw end caps
+
+// Function to handle user input
+function handleUserInput() {
+    userSides = parseInt(prompt("Enter the number of sides for the cross-section (e.g., 3 for triangular):"));
+    drawEndCaps = confirm("Draw end caps? (OK for yes, Cancel for no)");
+
+    // Validate user input for sides (must be a positive integer)
+    if (isNaN(userSides) || userSides <= 0) {
+        alert("Invalid input for sides. Using default value.");
+        userSides = 3; // Default value
+    }
+
+    // Display user choices
+    console.log(`User Choices - Sides: ${userSides}, Draw End Caps: ${drawEndCaps}`);
+}
+
+// Call the function to handle user input
+handleUserInput();
+
+// Generate the Surface of Revolution (SOR) using user-defined sides and end caps choice
+const userSorObject = generateSOR(rotatedProfile, userSides);
+
 // Print the SOR vertices and polygons (can store them for later use)
 console.log("SOR Vertices:", sorObject.vertices);
 console.log("SOR Polygons:", sorObject.polygons);
