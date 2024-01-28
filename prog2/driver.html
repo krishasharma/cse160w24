@@ -1,115 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Surface of Revolution</title>
+    <title>WebGL Surface of Revolution</title>
     <style>
-        /* Simple CSS for layout */
-        #controls {
-            margin-bottom: 10px;
-        }
+        canvas { width: 600px; height: 400px; }
+        #controls { /* Add styles for your control panel here */ }
     </style>
-    <script src="sor.js" type="text/javascript"></script>
 </head>
 <body>
+    <canvas id="glCanvas"></canvas>
     <div id="controls">
-        <!-- Slider for number of sides -->
-        <label for="sidesSlider">Number of sides:</label>
-        <input type="range" id="sidesSlider" min="3" max="100" value="10">
-        <!-- Button to apply changes -->
-        <button id="applyButton">Apply Changes</button>
+        <label for="scaleSlider">Scale:</label>
+        <input type="range" id="scaleSlider" min="0.1" max="2" step="0.1" value="1">
     </div>
+    <script src="sor.js"></script> <!-- Assuming this is your WebGL and SOR logic script -->
+    <script>
+        // JavaScript code will go here
+        document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('glCanvas');
+        const gl = canvas.getContext('webgl');
 
-    <canvas id="glcanvas" width="640" height="480"></canvas>
-
-    <script type="text/javascript">
-        // WebGL context initialization and rendering code
-        let gl;
-        let shaderProgram;
-        let sorBuffers; // Buffer for storing SOR vertex and index data
-
-        function initWebGL() {
-            const canvas = document.getElementById("glcanvas");
-            gl = canvas.getContext("webgl");
-
-            if (!gl) {
-                alert("Unable to initialize WebGL. Your browser may not support it.");
-                return;
-            }
-
-            initShaders();
-            // Initial buffer setup can be done here if necessary
+        if (!gl) {
+            alert('Unable to initialize WebGL. Your browser may not support it.');
+            return;
         }
 
-        function initShaders() {
-            // ... Shader initialization code ...
-        }
+        // Define shader sources (vertexShaderSource, fragmentShaderSource)
+        // You can take these from the previous example or customize them
 
-        function createSORBuffers(sorObject) {
-            const vertexBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sorObject.vertices), gl.STATIC_DRAW);
+        // Initialize shader program
+        const shaderProgram = createShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
 
-            const indexBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(sorObject.indices), gl.STATIC_DRAW);
+        // Collect all the info needed to use the shader program
+        const programInfo = {
+            program: shaderProgram,
+            attribLocations: {
+                vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+                // Add other attribute locations if needed
+            },
+            uniformLocations: {
+                projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+                modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+                // Add other uniform locations if needed
+            },
+        };
 
-            return {
-                vertexBuffer,
-                indexBuffer,
-                vertexCount: sorObject.indices.length
-            };
-        }
+        // Initialize buffers and other WebGL setup
+        // ...
 
-        function bindSORBuffers(buffers) {
-            const positionAttributeLocation = gl.getAttribLocation(shaderProgram, "aPosition");
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertexBuffer);
-            gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(positionAttributeLocation);
-
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indexBuffer);
-        }
-
+        // Function to draw the scene
         function drawScene() {
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            
-            // ... Additional setup code ...
-
-            if (sorBuffers) {
-                bindSORBuffers(sorBuffers);
-                gl.drawElements(gl.TRIANGLES, sorBuffers.vertexCount, gl.UNSIGNED_SHORT, 0);
-            }
+            // WebGL drawing code goes here
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            initWebGL();
-
-            const sidesSlider = document.getElementById('sidesSlider');
-            const applyButton = document.getElementById('applyButton');
-
-            applyButton.addEventListener('click', function() {
-                handleUserInput(sidesSlider.value);
-            });
-
-            sidesSlider.addEventListener('input', function() {
-                handleUserInput(sidesSlider.value);
-            });
-        });
-
-        function handleUserInput(sides) {
-            const userSides = parseInt(sides);
-            const userSorObject = generateSOR(rotatedProfile, userSides);
-
-            sorBuffers = createSORBuffers(userSorObject);
-
-            drawScene();
-        }
-
-        // Include the sor.js file
-        // <script src="sor.js"></script>
-
-        // ... Other necessary JavaScript code ...
-
+        // Call the drawScene function
+        drawScene();
+    });
     </script>
 </body>
 </html>

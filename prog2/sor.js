@@ -27,6 +27,24 @@ const prog0Coordinates = [
     // Add more coordinates as needed
 ];
 
+// Vertex Shader Source
+const vertexShaderSource = `
+    attribute vec4 aVertexPosition;
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
+
+    void main() {
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+    }
+`;
+
+// Fragment Shader Source
+const fragmentShaderSource = `
+    void main() {
+      gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); // Set the color to white
+    }
+`;
+
 // Function to convert prog0 coordinates to webGL coordinates
 function convertToWebGLCoordinates(coordinates, canvasWidth, canvasHeight) {
     const webGLCoordinates = [];
@@ -291,3 +309,114 @@ function createAndSaveSORFiles() {
 
 // Call the function with the SOR object and the end caps choice
 createAndSaveSORFiles();
+
+function createSORBuffers(gl, sorObject) {
+    // Create a buffer for the vertices
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    const vertices = sorObject.vertices.flatMap(v => [v.x, v.y, v.z]);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+    // Create a buffer for the normals
+    const normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    const normals = sorObject.normals.flatMap(n => [n.x, n.y, n.z]);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+
+    // Create a buffer for the indices
+    const indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    const indices = sorObject.polygons.flatMap(p => p);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+    return {
+        vertexBuffer,
+        normalBuffer,
+        indexBuffer,
+        vertexCount: indices.length
+    };
+}
+
+// Function to draw the SOR object using WebGL
+function drawSOR(gl, program, buffers) {
+    // Bind the vertex buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertexBuffer);
+    const positionLocation = gl.getAttribLocation(program, 'a_position');
+    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(positionLocation);
+
+    // Bind the normal buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normalBuffer);
+    const normalLocation = gl.getAttribLocation(program, 'a_normal');
+    gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(normalLocation);
+
+    // Bind the index buffer
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indexBuffer);
+
+    // Set up WebGL to use the shader program and draw the object
+    gl.useProgram(program);
+    gl.drawElements(gl.TRIANGLES, buffers.vertexCount, gl.UNSIGNED_SHORT, 0);
+}
+
+function createShaderProgram(gl, vertexShaderSource, fragmentShaderSource) {
+    // Function to create and compile a shader
+    function createShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    }
+
+    // Create and compile vertex and fragment shaders
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+    // Create and link the shader program
+    const shaderProgram = gl.createProgram();
+    gl.attachShader(shaderProgram, vertexShader);
+    gl.attachShader(shaderProgram, fragmentShader);
+    gl.linkProgram(shaderProgram);
+
+    // Check if the shader program was linked successfully
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+        return null;
+    }
+
+    return shaderProgram;
+}
+
+
+// Main function to initialize WebGL and draw the SOR
+function main() {
+    // Initialize WebGL context
+   
+    const canvas = document.getElementById('canvas');
+    const gl = canvas.getContext('webgl');
+
+    if (!gl) {
+        alert('Unable to initialize WebGL. Your browser may not support it.');
+        return;
+    }
+
+    // Create and use shader program (assuming shaders are defined and compiled)
+    const shaderProgram = createShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
+    if (!shaderProgram) {
+        console.error('Unable to initialize the shader program.');
+    }
+
+    // Generate the SOR object
+    const sorBuffers = createSORBuffers(gl, userSorObject);
+
+    // Draw the SOR
+    drawSOR(gl, shaderProgram, sorBuffers);
+}
+
+// Call the main function to start the process
+main();
