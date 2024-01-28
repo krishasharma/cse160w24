@@ -1,4 +1,4 @@
-// Sample coordinates from prog0 (replace with your actual coordinates)
+// Sample coordinates from prog0 
 const prog0Coordinates = [
     { x: 0, y: 0 },
     { x: 100, y: 50 },
