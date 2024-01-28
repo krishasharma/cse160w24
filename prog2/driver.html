@@ -8,6 +8,7 @@
             margin-bottom: 10px;
         }
     </style>
+    <script src="sor.js" type="text/javascript"></script>
 </head>
 <body>
     <div id="controls">
@@ -24,7 +25,7 @@
         // WebGL context initialization and rendering code
         let gl;
         let shaderProgram;
-        let vertexBuffer;
+        let sorBuffers; // Buffer for storing SOR vertex and index data
 
         function initWebGL() {
             const canvas = document.getElementById("glcanvas");
@@ -35,68 +36,51 @@
                 return;
             }
 
-            // Initialize shaders, buffers, etc.
             initShaders();
-            initBuffers();
+            // Initial buffer setup can be done here if necessary
         }
 
         function initShaders() {
-            // Vertex and fragment shader code
-            const vsSource = `...`; // Vertex shader code
-            const fsSource = `...`; // Fragment shader code
-
-            const vertexShader = loadShader(gl.VERTEX_SHADER, vsSource);
-            const fragmentShader = loadShader(gl.FRAGMENT_SHADER, fsSource);
-
-            shaderProgram = gl.createProgram();
-            gl.attachShader(shaderProgram, vertexShader);
-            gl.attachShader(shaderProgram, fragmentShader);
-            gl.linkProgram(shaderProgram);
-
-            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-                alert('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
-                return;
-            }
-
-            gl.useProgram(shaderProgram);
+            // ... Shader initialization code ...
         }
 
-        function loadShader(type, source) {
-            const shader = gl.createShader(type);
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                alert('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
-                gl.deleteShader(shader);
-                return null;
-            }
-
-            return shader;
-        }
-
-        function initBuffers() {
-            // Initialize buffers to draw the SOR
-            // This should be modified to use the SOR vertices
-            vertexBuffer = gl.createBuffer();
+        function createSORBuffers(sorObject) {
+            const vertexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            // Set the vertices for the SOR here
-            const vertices = [...]; // Replace with actual SOR vertices
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sorObject.vertices), gl.STATIC_DRAW);
+
+            const indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(sorObject.indices), gl.STATIC_DRAW);
+
+            return {
+                vertexBuffer,
+                indexBuffer,
+                vertexCount: sorObject.indices.length
+            };
+        }
+
+        function bindSORBuffers(buffers) {
+            const positionAttributeLocation = gl.getAttribLocation(shaderProgram, "aPosition");
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertexBuffer);
+            gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(positionAttributeLocation);
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indexBuffer);
         }
 
         function drawScene() {
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            
+            // ... Additional setup code ...
 
-            // Set up the viewport, projection, model-view matrices, etc.
-
-            // Bind the buffer and set up attribute pointers
-
-            // Draw the SOR
-            gl.drawArrays(gl.TRIANGLES, 0, /* number of vertices */);
+            if (sorBuffers) {
+                bindSORBuffers(sorBuffers);
+                gl.drawElements(gl.TRIANGLES, sorBuffers.vertexCount, gl.UNSIGNED_SHORT, 0);
+            }
         }
 
-        // Initialize WebGL when the page loads
         document.addEventListener("DOMContentLoaded", function() {
             initWebGL();
 
@@ -113,15 +97,19 @@
         });
 
         function handleUserInput(sides) {
-            // Update the SOR based on the new number of sides
-            // Regenerate vertices, update buffers, and redraw
             const userSides = parseInt(sides);
             const userSorObject = generateSOR(rotatedProfile, userSides);
-            // Update vertexBuffer with new SOR vertices
-            // Call drawScene() to render the updated SOR
+
+            sorBuffers = createSORBuffers(userSorObject);
+
+            drawScene();
         }
 
-        // ... Other JavaScript functions related to SOR generation ...
+        // Include the sor.js file
+        // <script src="sor.js"></script>
+
+        // ... Other necessary JavaScript code ...
+
     </script>
 </body>
 </html>
