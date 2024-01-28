@@ -212,3 +212,72 @@ function handleUserInput(sides) {
 }
 
 
+
+
+
+
+
+
+
+// Assuming you have a function to generate the rotated profile
+function generateRotatedProfile(originalProfile, sides) {
+    // Implementation to generate the rotated profile
+    // based on the original profile and the number of sides
+    // Returns an array of vertices for the SOR
+    const rotatedProfile = [];
+    const angleIncrement = (2 * Math.PI) / sides;
+
+    for (let i = 0; i < sides; i++) {
+        const angle = i * angleIncrement;
+        for (const point of originalProfile) {
+            // Assuming originalProfile contains points in {x, y} format
+            const rotatedX = point.x * Math.cos(angle) - point.y * Math.sin(angle);
+            const rotatedZ = point.x * Math.sin(angle) + point.y * Math.cos(angle);
+            rotatedProfile.push({ x: rotatedX, y: 0, z: rotatedZ });
+        }
+    }
+
+    return rotatedProfile;
+}
+
+// Function to generate the vertices for the SOR
+function generateSORVertices(rotatedProfile) {
+    // Convert the rotated profile into vertices suitable for WebGL
+    // Returns an array of vertices
+    const vertices = [];
+    for (const point of rotatedProfile) {
+        vertices.push(point.x, point.y, point.z);
+    }
+    return vertices;
+}
+
+// Function to update the buffer with new SOR vertices
+function updateVertexBuffer(gl, vertices) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+}
+
+// Function to handle user input and update the SOR
+function handleUserInput(sides) {
+    const userSides = parseInt(sides);
+    const rotatedProfile = generateRotatedProfile(originalProfile, userSides);
+    const sorVertices = generateSORVertices(rotatedProfile);
+    updateVertexBuffer(gl, sorVertices);
+    drawScene();
+}
+
+// Function to set up WebGL for drawing
+function drawScene() {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Set up the viewport, projection, model-view matrices, etc.
+
+    // Bind the buffer and set up attribute pointers
+
+    // Draw the SOR
+    gl.drawArrays(gl.TRIANGLES, 0, sorVertices.length / /* components per vertex */);
+}
+
+// Initialization functions for shaders, buffers, etc., as in the HTML file
+
+// Other necessary functions and variables

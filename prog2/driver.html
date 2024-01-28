@@ -2,19 +2,126 @@
 <html>
 <head>
     <title>Surface of Revolution</title>
-    <!-- Add your stylesheet here if needed -->
+    <style>
+        /* Simple CSS for layout */
+        #controls {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
+    <div id="controls">
+        <!-- Slider for number of sides -->
+        <label for="sidesSlider">Number of sides:</label>
+        <input type="range" id="sidesSlider" min="3" max="100" value="10">
+        <!-- Button to apply changes -->
+        <button id="applyButton">Apply Changes</button>
+    </div>
+
     <canvas id="glcanvas" width="640" height="480"></canvas>
 
-    <!-- Slider for number of sides -->
-    <label for="sidesSlider">Number of sides:</label>
-    <input type="range" id="sidesSlider" min="3" max="100" value="10">
+    <script type="text/javascript">
+        // WebGL context initialization and rendering code
+        let gl;
+        let shaderProgram;
+        let vertexBuffer;
 
-    <!-- Button to apply changes -->
-    <button id="applyButton">Apply Changes</button>
+        function initWebGL() {
+            const canvas = document.getElementById("glcanvas");
+            gl = canvas.getContext("webgl");
 
-    <!-- Add your WebGL and JavaScript files here -->
-    <script type="text/javascript" src="app.js"></script>
+            if (!gl) {
+                alert("Unable to initialize WebGL. Your browser may not support it.");
+                return;
+            }
+
+            // Initialize shaders, buffers, etc.
+            initShaders();
+            initBuffers();
+        }
+
+        function initShaders() {
+            // Vertex and fragment shader code
+            const vsSource = `...`; // Vertex shader code
+            const fsSource = `...`; // Fragment shader code
+
+            const vertexShader = loadShader(gl.VERTEX_SHADER, vsSource);
+            const fragmentShader = loadShader(gl.FRAGMENT_SHADER, fsSource);
+
+            shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                alert('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+                return;
+            }
+
+            gl.useProgram(shaderProgram);
+        }
+
+        function loadShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                alert('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+
+            return shader;
+        }
+
+        function initBuffers() {
+            // Initialize buffers to draw the SOR
+            // This should be modified to use the SOR vertices
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            // Set the vertices for the SOR here
+            const vertices = [...]; // Replace with actual SOR vertices
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        }
+
+        function drawScene() {
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            // Set up the viewport, projection, model-view matrices, etc.
+
+            // Bind the buffer and set up attribute pointers
+
+            // Draw the SOR
+            gl.drawArrays(gl.TRIANGLES, 0, /* number of vertices */);
+        }
+
+        // Initialize WebGL when the page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            initWebGL();
+
+            const sidesSlider = document.getElementById('sidesSlider');
+            const applyButton = document.getElementById('applyButton');
+
+            applyButton.addEventListener('click', function() {
+                handleUserInput(sidesSlider.value);
+            });
+
+            sidesSlider.addEventListener('input', function() {
+                handleUserInput(sidesSlider.value);
+            });
+        });
+
+        function handleUserInput(sides) {
+            // Update the SOR based on the new number of sides
+            // Regenerate vertices, update buffers, and redraw
+            const userSides = parseInt(sides);
+            const userSorObject = generateSOR(rotatedProfile, userSides);
+            // Update vertexBuffer with new SOR vertices
+            // Call drawScene() to render the updated SOR
+        }
+
+        // ... Other JavaScript functions related to SOR generation ...
+    </script>
 </body>
 </html>
