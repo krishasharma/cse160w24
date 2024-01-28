@@ -1,17 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOR WebGL Renderer</title>
-    <style>
-        body { margin: 0; }
-        canvas { width: 100%; height: 100%; display: block; }
-    </style>
+    <title>Surface of Revolution</title>
+    <!-- Add your stylesheet here if needed -->
 </head>
 <body>
-    <canvas id="webgl-canvas"></canvas>
-    <!-- You can add UI elements for user input here -->
-    <script src="app.js"></script>
+    <canvas id="glcanvas" width="640" height="480"></canvas>
+
+    <!-- Slider for number of sides -->
+    <label for="sidesSlider">Number of sides:</label>
+    <input type="range" id="sidesSlider" min="3" max="100" value="10">
+
+    <!-- Button to apply changes -->
+    <button id="applyButton">Apply Changes</button>
+
+    <!-- Add your WebGL and JavaScript files here -->
+    <script type="text/javascript" src="app.js"></script>
 </body>
 </html>
