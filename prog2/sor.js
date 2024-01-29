@@ -202,7 +202,7 @@ function generateNormals(sorObject) {
 const sides = 3;
 
 // Generate the Surface of Revolution (SOR) using the rotated profile and number of sides
-const sorObject = generateSOR(rotatedProfile, sides, drawEndCaps);
+let sorObject = generateSOR(rotatedProfile, sides, drawEndCaps);
 generateNormals(userSorObject);
 
 
@@ -392,6 +392,34 @@ function createShaderProgram(gl, vertexShaderSource, fragmentShaderSource) {
     return shaderProgram;
 }
 
+// Assuming you have a global variable for your SOR object
+sorObject = generateSOR(newRotatedProfile, newSides, newDrawEndCaps);
+
+function updateScale(newScale) {
+    // Update the vertices based on the new scale
+    for (let i = 0; i < sorObject.vertices.length; i++) {
+        sorObject.vertices[i].x *= newScale;
+        sorObject.vertices[i].y *= newScale;
+        sorObject.vertices[i].z *= newScale;
+    }
+
+    // Update the WebGL buffer with the new vertices
+    updateVertexBuffer(sorObject.vertices);
+
+    // Redraw the scene
+    drawScene();
+}
+
+function updateVertexBuffer(vertices) {
+    // Bind the appropriate buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+    // Update the buffer data
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices.flat()), gl.STATIC_DRAW);
+
+    // Unbind the buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+}
 
 // Main function to initialize WebGL and draw the SOR
 function main() {
