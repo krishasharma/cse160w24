@@ -1,5 +1,7 @@
 // sor.js
 
+let sorInstances = []
+
 // Function to initialize WebGL context
 function initWebGL(canvasId) {
     const canvas = document.getElementById(canvasId);
@@ -138,16 +140,17 @@ function render() {
     // Clear the canvas
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // Create transformation matrices
-    const transformationMatrix = {
-        modelView: /* ModelView matrix */,
-        projection: /* Projection matrix */
-    };
+    // Loop through each SOR instance and draw it
+    sorInstances.forEach(instance => {
+        // Apply transformations to vertices and normals
+        const transformedVertices = applyTransformationsToVertices(instance.vertices, instance.transform);
+        const transformedNormals = transformNormals(instance.normals, instance.transform.rotationMatrix);
 
-    // For each SOR, create buffers and draw it
-    sorObjects.forEach(sor => {
-        const buffers = createBuffers(gl, sor);
-        drawSOR(gl, shaderProgram, buffers, transformationMatrix);
+        // Update buffers with the transformed vertices and normals
+        updateBuffers(gl, transformedVertices, transformedNormals);
+
+        // Draw the SOR instance with its specific transformation
+        drawSOR(gl, shaderProgram, instance.color, /* other required parameters */);
     });
 
     // Request to render the next frame
@@ -174,6 +177,33 @@ function initWebGL(canvasId) {
     // ...
 }
 
+function transformNormals(normals, rotationMatrix) {
+    // Apply only the rotation part of the transformation to the normals
+    return normals.map(normal => {
+        // Apply rotation matrix to the normal
+        return multiplyMatrixAndPoint(rotationMatrix, normal);
+    });
+}
+
+function multiplyMatrixAndPoint(matrix, point) {
+    // Assumes matrix is a 4x4 and point is a 3D vector
+    let result = [];
+    for (let i = 0; i < 3; i++) {
+        result[i] = matrix[i][0] * point[0] + matrix[i][1] * point[1] + matrix[i][2] * point[2];
+    }
+    return result;
+}
+
+function updateBuffers(gl, vertices, normals) {
+    // Update the vertex buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+
+    // Update the normal buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.DYNAMIC_DRAW);
+}
+
 class SORInstance {
     constructor(vertices, normals, color) {
         this.vertices = vertices;  // Origianl vertex data
@@ -188,6 +218,32 @@ class SORInstance {
         };
     }
 
+    // Translation 
+    translateVertex(vertex, translate) {
+        return [
+            vertex[0] + translate[0],
+            vertex[1] + translate[1],
+            vertex[2] + translate[2]
+        ];
+    }
+
+    // Rotation 
+    rotateVertex(vertex, rotate) {
+        let rotatedVertex = this.rotateX(vertex, rotate[0]);
+        rotatedVertex = this.rotateY(rotatedVertex, rotate[1]);
+        rotatedVertex = this.rotateZ(rotatedVertex, rotate[2]);
+        return rotatedVertex;
+    }
+
+    // Scaling 
+    scaleVertex(vertex, scale) {
+        return [
+            vertex[0] * scale[0],
+            vertex[1] * scale[1],
+            vertex[2] * scale[2]
+        ];
+    }
+    
     rotateX(x, y, z, angle) {
         const cosTheta = Math.cos(angle);
         const sinTheta = Math.sin(angle);
@@ -218,9 +274,29 @@ class SORInstance {
         ];
     }
 
+    // Method to apply all transformations to a vertex
+    applyTransformationsToVertex(vertex, transform) {
+        let transformedVertex = vertex;
+    
+        // Apply scaling
+        transformedVertex = this.scaleVertex(transformedVertex, transform.scale);
+    
+        // Apply rotation
+        transformedVertex = this.rotateVertex(transformedVertex, transform.rotate);
+    
+        // Apply translation
+        transformedVertex = this.translateVertex(transformedVertex, transform.translate);
+    
+        return transformedVertex;
+    }
+
+    // Method to apply transformations to all vertices
     applyTransformations() {
-        this.vertices = this.transformVertices(this.originalVertices);
-        this.normals = this.transformNormals(this.originalNormals);
+        // this.vertices = this.transformVertices(this.originalVertices);
+        // this.normals = this.transformNormals(this.originalNormals);
+        this.vertices = this.originalVertices.map(vertex => {
+            return this.applyTransformationsToVertex(vertex, this.transform);
+        });
     }
 
     transformVertices(vertices) {
@@ -237,7 +313,7 @@ class SORInstance {
     transformNormals(normals) {
         return normals.map(normal => {
             // Normals are only rotated, not scaled or translated
-            return this.applyRotation(...normal);
+            return multiplyMatrixAndPoint(rotationMatrix, normal)
         });
     }
 
@@ -250,6 +326,4 @@ class SORInstance {
         [x, y, z] = rotateZ(x, y, z, this.transform.rotate[2]);
         return [x, y, z];
     }
-
-    // Additional methods for rotateX, rotateY, rotateZ can be added
 }
