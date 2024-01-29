@@ -24,30 +24,6 @@ function initWebGL(canvasId) {
     return gl;
 }
 
-// Vertex shader source
-const vertexShaderSource = `
-attribute vec4 aVertexPosition;
-uniform mat4 uModelViewMatrix;
-uniform mat4 uProjectionMatrix;
-void main() {
-    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-}
-`;
-
-// Fragment shader source
-const fragmentShaderSource = `
-precision mediump float;
-uniform vec4 uFragmentColor;
-uniform vec3 uLightDirection;
-varying vec3 vNormal;
-void main() {
-    vec3 normalizedNormal = normalize(vNormal);
-    float light = max(dot(normalizedNormal, uLightDirection), 0.0);
-    vec4 diffuse = uFragmentColor * light;
-    gl_FragColor = diffuse;
-}
-`;
-
 // Function to compile shaders and create a WebGL program
 function createShader(gl, type, source) {
     // Compile vertex and fragment shaders for flat shading
@@ -91,49 +67,31 @@ if (gl) {
     // Further steps will follow, such as creating buffers, setting up transformations, etc.
 }
 
-// Function to create buffers for SOR vertices and normals
-function createBuffers(gl, sorData) {
-    // Create, bind, and populate buffers for vertices and normals
-    // Create a buffer for the SOR's vertices
-    const vertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sorData.vertices), gl.STATIC_DRAW);
 
-    // Create and bind the normal buffer
-    const normalBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sorData.normals), gl.STATIC_DRAW);
-
-    return {
-        vertex: vertexBuffer,
-        normal: normalBuffer,
-    };
+// Vertex shader source
+const vertexShaderSource = `
+attribute vec4 aVertexPosition;
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+void main() {
+    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
 }
+`;
 
-// Function to draw a SOR object
-function drawSOR(gl, shaderProgram, buffers, transformationMatrix) {
-    // Set shader uniforms, bind buffers
-    // Apply transformations
-    // Draw the object using gl.drawElements or gl.drawArrays
-    // Bind the vertex buffer
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertex);
-    const vertexPosition = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
-    gl.vertexAttribPointer(vertexPosition, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vertexPosition);
-
-    // Set the shader uniforms for transformation matrices
-    const modelViewMatrixLoc = gl.getUniformLocation(shaderProgram, 'uModelViewMatrix');
-    const projectionMatrixLoc = gl.getUniformLocation(shaderProgram, 'uProjectionMatrix');
-    const fragmentColorLoc = gl.getUniformLocation(shaderProgram, 'uFragmentColor');
-
-    // Set the matrices and color here. For example:
-    // gl.uniformMatrix4fv(modelViewMatrixLoc, false, transformationMatrix.modelView);
-    // gl.uniformMatrix4fv(projectionMatrixLoc, false, transformationMatrix.projection);
-    // gl.uniform4f(fragmentColorLoc, 1.0, 0.0, 0.0, 1.0); // Red color for example
-
-    // Draw the object
-    // gl.drawArrays(gl.TRIANGLES, 0, numberOfVertices);
+// Fragment shader source
+const fragmentShaderSource = `
+precision mediump float;
+uniform vec4 uFragmentColor;
+uniform vec3 uLightDirection;
+varying vec3 vNormal;
+void main() {
+    vec3 normalizedNormal = normalize(vNormal);
+    float light = max(dot(normalizedNormal, uLightDirection), 0.0);
+    vec4 diffuse = uFragmentColor * light;
+    gl_FragColor = diffuse;
 }
+`;
+
 
 // Render loop
 function render() {
@@ -142,15 +100,17 @@ function render() {
 
     // Loop through each SOR instance and draw it
     sorInstances.forEach(instance => {
-        // Apply transformations to vertices and normals
-        const transformedVertices = applyTransformationsToVertices(instance.vertices, instance.transform);
-        const transformedNormals = transformNormals(instance.normals, instance.transform.rotationMatrix);
+        // Apply transformations to the instance
+        instance.applyTransformations();
 
         // Update buffers with the transformed vertices and normals
-        updateBuffers(gl, transformedVertices, transformedNormals);
+        updateBuffers(gl, instance.vertexBuffer, instance.normalBuffer, instance.vertices, instance.normals);
 
-        // Draw the SOR instance with its specific transformation
-        drawSOR(gl, shaderProgram, instance.color, /* other required parameters */);
+        // Set up WebGL to use the updated buffers
+        setupBufferAttributes(gl, instance);
+
+        // Draw the SOR instance
+        drawSOR(gl, instance, shaderProgram);
     });
 
     // Request to render the next frame
@@ -159,23 +119,6 @@ function render() {
 
 // Start rendering
 render();
-
-// Function for handling mouse events
-function setupMouseHandlers(canvas) {
-    // Handle mouse down, move, up events for selecting and transforming SORs
-    // Implement picking logic
-    // Translate, rotate, and scale the selected SOR based on mouse movement
-}
-
-// Initialize mouse handling
-setupMouseHandlers(document.getElementById('webgl-canvas'));
-
-// Add comments throughout the code
-// For example:
-// Initializes WebGL context and sets up shaders.
-function initWebGL(canvasId) {
-    // ...
-}
 
 function transformNormals(normals, rotationMatrix) {
     // Apply only the rotation part of the transformation to the normals
@@ -194,20 +137,11 @@ function multiplyMatrixAndPoint(matrix, point) {
     return result;
 }
 
-function updateBuffers(gl, vertices, normals) {
-    // Update the vertex buffer
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-
-    // Update the normal buffer
-    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.DYNAMIC_DRAW);
-}
-
 class SORInstance {
-    constructor(vertices, normals, color) {
+    constructor(vertices, polygons, normals, color) {
         this.vertices = vertices;  // Origianl vertex data
-        this.normals = normals;    // Original normal data
+        this.polygons = polygons; // Array of polygons (indices of vertices)
+        this.normals = this.calculateNormals();    // Original normal data
         this.vertices = [...vertices];    // Transformed vertices
         this.normals = [...normals];      // Transformed normals
         this.color = color;        // Color of the SOR
@@ -216,6 +150,32 @@ class SORInstance {
             rotate: [0, 0, 0],    // Rotation angles (x, y, z)
             scale: [1, 1, 1]      // Scaling factors (x, y, z)
         };
+    }
+
+    calculateNormals() {
+        const normals = [];
+        for (const polygon of this.polygons) {
+            const [i1, i2, i3] = polygon;
+            const v1 = this.vertices[i1];
+            const v2 = this.vertices[i2];
+            const v3 = this.vertices[i3];
+    
+            // Compute vectors for two edges of the triangle
+            const edge1 = [v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2]];
+            const edge2 = [v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2]];
+    
+            // Compute the normal using the cross product of the edges
+            const normal = [
+                edge1[1] * edge2[2] - edge1[2] * edge2[1],
+                edge1[2] * edge2[0] - edge1[0] * edge2[2],
+                edge1[0] * edge2[1] - edge1[1] * edge2[0]
+            ];
+    
+            // Normalize the normal vector
+            const length = Math.sqrt(normal[0] ** 2 + normal[1] ** 2 + normal[2] ** 2);
+            normals.push(normal.map(n => n / length));
+        }
+        return normals;
     }
 
     // Translation 
@@ -327,3 +287,129 @@ class SORInstance {
         return [x, y, z];
     }
 }
+
+function createNewSOR(vertexData, polygonData) {
+    // Parse vertex data
+    const vertices = vertexData.map(line => {
+        const parts = line.split(',');
+        return parts.slice(1).map(Number); // Convert string parts to numbers
+    });
+
+    // Parse polygon data (assuming they are triangles)
+    const polygons = polygonData.map(line => {
+        const parts = line.split(' ');
+        return parts.slice(1).map(idx => parseInt(idx) - 1); // Convert indices to zero-based
+    });
+
+    // Create a new SOR instance
+    const newSOR = new SOR(vertices, polygons);
+
+    // Add the new SOR instance to the global sorInstances array
+    sorInstances.push(newSOR);
+}
+
+// Function to create buffers for SOR vertices and normals
+function createBuffers(gl, sorData) {
+    // Create, bind, and populate buffers for vertices and normals
+    // Create a buffer for the SOR's vertices
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sorData.vertices), gl.STATIC_DRAW);
+
+    // Create and bind the normal buffer
+    const normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sorData.normals), gl.STATIC_DRAW);
+
+    return {
+        vertex: vertexBuffer,
+        normal: normalBuffer,
+    };
+}
+
+function updateBuffers(gl, vertexBuffer, normalBuffer, vertices, normals) {
+    // Update the vertex buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices.flat()), gl.STATIC_DRAW);
+
+    // Update the normal buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals.flat()), gl.STATIC_DRAW);
+}
+
+function setupBufferAttributes(gl, instance) {
+    // Bind the vertex buffer and set vertex attribute pointers
+    gl.bindBuffer(gl.ARRAY_BUFFER, instance.vertexBuffer);
+    // Assuming the position attribute location is known
+    gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(positionAttributeLocation);
+
+    // Bind the normal buffer and set normal attribute pointers
+    gl.bindBuffer(gl.ARRAY_BUFFER, instance.normalBuffer);
+    // Assuming the normal attribute location is known
+    gl.vertexAttribPointer(normalAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(normalAttributeLocation);
+
+    // Other attribute setup if needed
+}
+
+// Function to draw a SOR object
+function drawSOR(gl, instance, shaderProgram) {
+    // Use the shader program
+    gl.useProgram(shaderProgram);
+
+    // Set the uniforms for the shader program, e.g., transformation matrices, color
+    setShaderUniforms(gl, shaderProgram, instance);
+
+    // Draw the SOR instance
+    // This will depend on whether you're using gl.drawArrays or gl.drawElements
+    gl.drawArrays(gl.TRIANGLES, 0, instance.vertices.length / 3);
+}
+
+// Add event listeners to UI controls
+// For a rotation slider:
+document.getElementById('rotation-slider').addEventListener('input', function(event) {
+    // Update the rotation of the selected SOR instance
+    let angle = parseFloat(event.target.value);
+    selectedSORInstance.transform.rotate[0] = angle; // Assuming rotation around X-axis
+    // Trigger a re-render
+});
+
+/*
+// Function for handling mouse events
+function setupMouseHandlers(canvas) {
+    // Handle mouse down, move, up events for selecting and transforming SORs
+    // Implement picking logic
+    // Translate, rotate, and scale the selected SOR based on mouse movement
+}
+
+// Initialize mouse handling
+setupMouseHandlers(document.getElementById('webgl-canvas'));
+*/
+
+// Render loop
+function render() {
+    // Clear the canvas
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Loop through each SOR instance and draw it
+    sorInstances.forEach(instance => {
+        // Apply transformations to the instance
+        instance.applyTransformations();
+
+        // Update buffers with the transformed vertices and normals
+        updateBuffers(gl, instance.vertexBuffer, instance.normalBuffer, instance.vertices, instance.normals);
+
+        // Set up WebGL to use the updated buffers
+        setupBufferAttributes(gl, instance);
+
+        // Draw the SOR instance
+        drawSOR(gl, instance, shaderProgram);
+    });
+
+    // Request to render the next frame
+    requestAnimationFrame(render);
+}
+
+// Start rendering
+render();
