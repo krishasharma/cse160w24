@@ -1,3 +1,5 @@
+/*
+
 document.addEventListener("DOMContentLoaded", function() {
     const sidesSlider = document.getElementById('sidesSlider');
     const applyButton = document.getElementById('applyButton');
@@ -79,16 +81,16 @@ const programInfo = {
       modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
     },
 };
-/*
-gl.attachShader(shaderProgram, vertexShader);
-gl.attachShader(shaderProgram, fragmentShader);
-gl.linkProgram(shaderProgram);
-if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    console.error('Shader program linking error:', gl.getProgramInfoLog(shaderProgram));
-    gl.deleteProgram(shaderProgram);
-    throw new Error('Shader program linking failed');
-}
-*/
+
+// gl.attachShader(shaderProgram, vertexShader);
+// gl.attachShader(shaderProgram, fragmentShader);
+// gl.linkProgram(shaderProgram);
+// if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+//     console.error('Shader program linking error:', gl.getProgramInfoLog(shaderProgram));
+//     gl.deleteProgram(shaderProgram);
+//     throw new Error('Shader program linking failed');
+// }
+
 
 function initBuffers(gl, vertices) {
     // Create a buffer for the vertex positions
@@ -214,11 +216,6 @@ function handleUserInput(sides) {
 
 
 
-
-
-
-
-
 // Assuming you have a function to generate the rotated profile
 function generateRotatedProfile(originalProfile, sides) {
     // Implementation to generate the rotated profile
@@ -275,9 +272,8 @@ function drawScene() {
     // Bind the buffer and set up attribute pointers
 
     // Draw the SOR
-    gl.drawArrays(gl.TRIANGLES, 0, sorVertices.length / /* components per vertex */);
-}
+    gl.drawArrays(gl.TRIANGLES, 0, sorVertices.length / /* components per vertex */
+    // Initialization functions for shaders, buffers, etc., as in the HTML file
 
-// Initialization functions for shaders, buffers, etc., as in the HTML file
 
 // Other necessary functions and variables
