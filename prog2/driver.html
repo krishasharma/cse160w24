@@ -1,17 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebGL Surface of Revolution</title>
-    <script src="https://cdn.jsdelivr.net/npm/gl-matrix@2.5.2/dist/gl-matrix-min.js"></script>
+    <title>WebGL SOR Scene</title>
     <style>
-        canvas { width: 100%; height: 100% }
+        /* Basic styling */
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        canvas { border: 1px solid black; }
+        .controls { margin-top: 20px; }
     </style>
 </head>
 <body>
-    <canvas id="glCanvas"></canvas>
-    <label>
-        <input type="checkbox" id="wireframeToggle"> Wireframe Mode
-    </label>
-    <script type="text/javascript" src="sor.js"></script>
+    <canvas id="glCanvas" width="640" height="480"></canvas>
+    <div class="controls">
+        <div>
+            <!-- Rotation Sliders -->
+            <label>To Rotate Cube 1</label><input type="range" id="cube1-rotation-slider" min="0" max="360">
+            <label>To Rotate Cube 2</label><input type="range" id="cube2-rotation-slider" min="0" max="360">
+        </div>
+        <div>
+            <!-- Scale Sliders -->
+            <label>Cube 1 Scale Slider</label><input type="range" id="cube1-scale-slider" min="0.1" max="2" step="0.1">
+            <label>Cube 2 Scale Slider</label><input type="range" id="cube2-scale-slider" min="0.1" max="2" step="0.1">
+        </div>
+            <!-- Wireframe Checkboxes -->
+            <label><input type="checkbox" id="cube1Wireframe"> Wireframe (Cube 1)</label>
+            <label><input type="checkbox" id="cube2Wireframe"> Wireframe (Cube 2)</label>
+        </div>
+    </div>
+    <script src="sor.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gl-matrix@2.4.0/dist/gl-matrix-min.js"></script>
 </body>
 </html>
