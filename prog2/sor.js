@@ -53,6 +53,7 @@ function initBuffers(gl, vertices) {
     return positionBuffer;
 }
 
+/*
 function render(gl, programInfo, buffers) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
     gl.clearDepth(1.0);                 // Clear everything
@@ -134,6 +135,7 @@ function render(gl, programInfo, buffers) {
       gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
     }
 }
+*/
 
 function createTriangle(gl) {
     const vertices = new Float32Array([
@@ -156,18 +158,17 @@ function main() {
     if (!gl) {
       return;
     }
-  
-    const shaderProgram = initShaders(gl);
+
+    // Initialize shaders
+    const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
     const programInfo = {
-      program: shaderProgram,
-      attribLocations: {
-        vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-      },
-      uniformLocations: {
-        projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-        modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-      },
+        program: shaderProgram,
+        attribLocations: {
+            vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+        },
     };
+
+    const triangleBuffer = createTriangle(gl);
   
     /*
     // Here you will define the vertices of your SOR object
@@ -176,8 +177,9 @@ function main() {
     ];
     */
   
-    const buffers = initBuffers(gl, vertices);
-  
+    // const buffers = initBuffers(gl, vertices);
+    
+    /*
     // Draw the scene repeatedly
     function renderLoop() {
       render(gl, programInfo, buffers);
@@ -185,6 +187,54 @@ function main() {
       requestAnimationFrame(renderLoop);
     }
     requestAnimationFrame(renderLoop);
+    */
+
+    // Draw the scene
+    function drawScene() {
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black
+        gl.clearDepth(1.0);                 // Clear everything
+        gl.enable(gl.DEPTH_TEST);           // Enable depth testing
+        gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
+
+        // Clear the canvas before we start drawing on it
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        // Tell WebGL how to pull out the positions from the position
+        // buffer into the vertexPosition attribute
+        {
+            const numComponents = 3;  // pull out 3 values per iteration
+            const type = gl.FLOAT;    // the data in the buffer is 32bit floats
+            const normalize = false;  // don't normalize
+            const stride = 0; // how many bytes to get from one set of values to the next
+            // 0 = use type and numComponents above
+            const offset = 0;         // how many bytes inside the buffer to start from
+            gl.bindBuffer(gl.ARRAY_BUFFER, triangleBuffer);
+            gl.vertexAttribPointer(
+                programInfo.attribLocations.vertexPosition,
+                numComponents,
+                type,
+                normalize,
+                stride,
+                offset);
+            gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+        }
+        // Use our program when drawing
+    gl.useProgram(programInfo.program);
+
+    // Set the shader uniforms
+    // (In this simple example, we don't have any uniforms)
+
+    // Draw the triangle
+    {
+        const offset = 0;
+        const vertexCount = 3;
+        gl.drawArrays(gl.TRIANGLES, offset, vertexCount);
+    }
 }
-  
-window.onload = main;
+
+// Render the scene
+drawScene();
+}
+
+// Start the WebGL application
+main();
