@@ -24,5 +24,4 @@ This project was developed using pure WebGL and JavaScript without relying on ex
 ## Author
 
 - **Name:** Krisha Sharma
-- **Login ID:** krvsharm
 - **Date:** 01.30.24
