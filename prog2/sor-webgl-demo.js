@@ -114,6 +114,7 @@ var cubeScale = 1.0;
 function initEventListeners() {
     const rotationSlider = document.getElementById('rotationSlider');
     const scaleSlider = document.getElementById('scaleSlider');
+    const wireframeCheckbox = document.getElementById('wireframeCheckbox');
 
     rotationSlider.addEventListener('input', function() {
         cubeRotation = this.value * Math.PI / 180; // Convert degrees to radians
@@ -121,6 +122,10 @@ function initEventListeners() {
 
     scaleSlider.addEventListener('input', function() {
         cubeScale = this.value;
+    });
+
+    wireframeCheckbox.addEventListener('change', function() {
+        isWireframe = this.checked;
     });
 }
 
@@ -200,9 +205,9 @@ var isWireframe = false;
 
 // Function to handle keydown events
 function keyDownHandler(event) {
-    if (event.keyCode == 87) { // 'W' key for Wireframe
-        isWireframe = !isWireframe;
-    }
+    // if (event.keyCode == 87) { // 'W' key for Wireframe
+    //     isWireframe = !isWireframe;
+    // }
     if (event.keyCode == 37) { // Left arrow key
         yRotation -= 0.1;
     } else if (event.keyCode == 39) { // Right arrow key
@@ -218,7 +223,7 @@ function keyDownHandler(event) {
 
 document.addEventListener('keydown', keyDownHandler, false);
 
-function drawScene(gl, programInfo, buffers) {
+function drawScene(gl, programInfo, buffers, wireframeBuffers) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
     gl.clearDepth(1.0);                 // Clear everything
     gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -227,61 +232,30 @@ function drawScene(gl, programInfo, buffers) {
     // Clear the canvas before we start drawing on it.
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // Set the color to blue
-    const color = [0.0, 0.0, 1.0, 1.0]; // RGBA, here blue
-
     // Create a perspective matrix
     const fieldOfView = 45 * Math.PI / 180;   // in radians
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const zNear = 0.1;
     const zFar = 100.0;
-    const projectionMatrix = mat4.create(); // using gl-matrix library for matrix operations
+    const projectionMatrix = mat4.create();
     mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
     // Set the drawing position to the "identity" point, which is the center of the scene.
     const modelViewMatrix = mat4.create();
 
-    // Move to where we want to start drawing the square.
-    mat4.translate(modelViewMatrix,     // destination matrix
-                   modelViewMatrix,     // matrix to translate
-                   [-0.0, 0.0, -6.0]);  // amount to translate
-    mat4.rotate(modelViewMatrix,  // destination matrix
-                modelViewMatrix,  // matrix to rotate
-                rotation,         // amount to rotate in radians
-                [0, 0, 1]);       // axis to rotate around (Z)
-    // Apply scaling
+    // Move the drawing position to where we want to start drawing the cube.
+    mat4.translate(modelViewMatrix, modelViewMatrix, [-0.0, 0.0, -6.0]);
+
+    // Apply the rotation and scaling
+    mat4.rotate(modelViewMatrix, modelViewMatrix, cubeRotation, [0, 0, 1]);
     mat4.scale(modelViewMatrix, modelViewMatrix, [cubeScale, cubeScale, cubeScale]);
-    // Apply rotation
-    mat4.rotate(modelViewMatrix, modelViewMatrix, cubeRotation, [0, 1, 0]); // Rotate around Y axis
-    // Rotate the cube
-    mat4.rotate(modelViewMatrix, modelViewMatrix, xRotation, [1, 0, 0]);
-    mat4.rotate(modelViewMatrix, modelViewMatrix, yRotation, [0, 1, 0]);
-    mat4.rotate(modelViewMatrix, modelViewMatrix, zRotation, [0, 0, 1]);
 
-    if (isWireframe) {
-        // Use wireframe buffer
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireframeBuffers);
-        const vertexCount = cubeWireframeIndices.length;
-        const type = gl.UNSIGNED_SHORT;
-        const offset = 0;
-        gl.drawElements(gl.LINES, vertexCount, type, offset);
-    } else {
-        // Use normal buffer for flat shading
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-        const vertexCount = 36; // Total number of vertices in the cube indices
-        const type = gl.UNSIGNED_SHORT;
-        const offset = 0;
-        gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-    }
-
-    // Tell WebGL how to pull out the positions from the position
-    // buffer into the vertexPosition attribute
+    // Tell WebGL how to pull out the positions from the position buffer into the vertexPosition attribute
     {
         const numComponents = 3;  // pull out 3 values per iteration
         const type = gl.FLOAT;    // the data in the buffer is 32bit floats
         const normalize = false;  // don't normalize
-        const stride = 0;         // how many bytes to get from one set of values to the next
-                                  // 0 = use type and numComponents above
+        const stride = 0;         // how many bytes to get from one set to the next
         const offset = 0;         // how many bytes inside the buffer to start from
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertex);
         gl.vertexAttribPointer(
@@ -291,8 +265,7 @@ function drawScene(gl, programInfo, buffers) {
             normalize,
             stride,
             offset);
-        gl.enableVertexAttribArray(
-            programInfo.attribLocations.vertexPosition);
+        gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
     }
 
     // Tell WebGL to use our program when drawing
@@ -307,14 +280,14 @@ function drawScene(gl, programInfo, buffers) {
         programInfo.uniformLocations.modelViewMatrix,
         false,
         modelViewMatrix);
-    gl.uniform4fv(programInfo.uniformLocations.uColor, color); // Set color uniform
 
-    {
-        const vertexCount = 36;
-        const type = gl.UNSIGNED_SHORT;
-        const offset = 0;
+    // Draw the cube in wireframe or solid mode based on isWireframe flag
+    if (isWireframe) {
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireframeBuffers.wireframeIndices);
+        gl.drawElements(gl.LINES, cubeWireframeIndices.length, gl.UNSIGNED_SHORT, 0);
+    } else {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-        gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
+        gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
     }
 }
 
