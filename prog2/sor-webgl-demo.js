@@ -250,7 +250,7 @@ function initWireframeBuffers(gl) {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireframeIndexBuffer);
 
     // Pass the wireframe indices to the buffer
-    // We use Uint16Array to hold the indices and gl.STATIC_DRAW as these 
+    // Using Uint16Array to hold the indices and gl.STATIC_DRAW as these 
     // indices won't change over time, optimizing GPU memory usage
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeWireframeIndices), gl.STATIC_DRAW);
 
@@ -318,8 +318,9 @@ function drawScene(gl, programInfo, buffers, wireframeBuffers) {
     // Move the drawing position to where we want to start drawing the cube.
     mat4.translate(modelViewMatrix, modelViewMatrix, [-0.0, 0.0, -6.0]);
 
-    // Apply the rotation and scaling
+    // Apply the rotation
     mat4.rotate(modelViewMatrix, modelViewMatrix, cubeRotation, [0, 0, 1]);
+    // Apply scaling
     mat4.scale(modelViewMatrix, modelViewMatrix, [cubeScale, cubeScale, cubeScale]);
 
     // Tell WebGL how to pull out the positions from the position buffer into the vertexPosition attribute
@@ -356,15 +357,15 @@ function drawScene(gl, programInfo, buffers, wireframeBuffers) {
     // Draw the cube in wireframe or solid mode based on isWireframe flag
     if (isWireframe) {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireframeBuffers.wireframeIndices);
-        gl.drawElements(gl.LINES, cubeWireframeIndices.length, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(gl.LINES, cubeWireframeIndices.length, gl.UNSIGNED_SHORT, 0); 
     } else {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-        gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0); // two arrays, 8 points for the first, and then 6 faces, each face is a triangle, total 12, faces so 36 
     }
 }
 
 function init() {
-    // Initialize the shader program by compiling and linking shaders
+    // Initialize the shader program by compiling and linking shader
     const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
 
     // Store shader program info, including attribute and uniform locations
