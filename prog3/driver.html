@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Prog2</title>
+  </head>
+
+  <body onload="main()">
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+    <br>
+    <Label>Object 1 (red)</Label>
+    <br>
+    <Label>Wireframe</Label> <input type="checkbox" id="wireframe"></button>
+    <br>
+    <Label>Scale    </Label><input type="range" min="1" max="100" value="50", id = "scale">
+    <br>
+    <Label>Translate X    </Label><input type="range" min="-100" max="100" value="50", id = "moveX">
+    <Label>Y    </Label><input type="range" min="-100" max="100" value="0", id = "moveY">
+    <Label>Z    </Label><input type="range" min="-100" max="100" value="0", id = "moveZ">
+    <br>
+    <Label>Rotation X    </Label><input type="range" min="0" max="360" value="0", id = "rotationX">
+    <Label>Y    </Label><input type="range" min="0" max="360" value="0", id = "rotationY">
+    <Label>Z    </Label><input type="range" min="0" max="360" value="0", id = "rotationZ">
+    <br>
+    <br>
+    <Label>Object 2 (green)</Label>
+    <br>
+    <Label>Wireframe</Label> <input type="checkbox" id="wireframe2"></button>
+    <br>
+    <Label>Scale    </Label><input type="range" min="1" max="100" value="25", id = "scale2">
+    <br>
+    <Label>Translate X    </Label><input type="range" min="-100" max="100" value="-50", id = "moveX2">
+    <Label>Y    </Label><input type="range" min="-100" max="100" value="0", id = "moveY2">
+    <Label>Z    </Label><input type="range" min="-100" max="100" value="0", id = "moveZ2">
+    <br>
+    <Label>Rotation X    </Label><input type="range" min="0" max="360" value="0", id = "rotationX2">
+    <Label>Y    </Label><input type="range" min="0" max="360" value="0", id = "rotationY2">
+    <Label>Z    </Label><input type="range" min="0" max="360" value="0", id = "rotationZ2">
+    <label><input type="checkbox" id="toggleDirectionalLight" checked> Toggle Directional Light</label>
+    <label><input type="checkbox" id="togglePointLight" checked> Toggle Point Light</label> 
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
