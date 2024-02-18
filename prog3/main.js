@@ -62,6 +62,10 @@ var lightDirection = [1.0, 1.0, 1.0]; // Direction of the light
 var pointLightColor = [1.0, 0.8, 0.2]; // Warm orange light
 var pointLightPosition = [-100.0, 100.0, 100.0]; // Point light position
 
+document.getElementById('pointLightX').value = pointLightPosition[0];
+document.getElementById('pointLightY').value = pointLightPosition[1];
+document.getElementById('pointLightZ').value = pointLightPosition[2];
+
 const maxScale = 2;
 const maxMove = [3, 3, 3];
 
@@ -77,6 +81,9 @@ let rotation2 = [0, 0, 0];
 let useFlatShading = true; // Default to flat shading
 let useGouraudShading = false;
 let usePhongShading = false;
+let useAmbientLight = true;
+let useDiffuseLight = true;
+let useSpecularLight = true;
 
 document.getElementById("wireframe").addEventListener("change", function() {
     wireframe = this.checked;
@@ -109,6 +116,36 @@ document.getElementById("phongShading").addEventListener("change", function() {
       useGouraudShading = false;
   }
   main();
+});
+
+document.getElementById("ambientLight").addEventListener("change", function() {
+  useAmbientLight = this.checked;
+  main();
+});
+
+document.getElementById("diffuseLight").addEventListener("change", function() {
+  useDiffuseLight = this.checked;
+  main();
+});
+
+document.getElementById("specularLight").addEventListener("change", function() {
+  useSpecularLight = this.checked;
+  main();
+});
+
+document.getElementById('pointLightX').addEventListener('input', function() {
+  pointLightPosition[0] = parseFloat(this.value);
+  main(); // Re-render the scene
+});
+
+document.getElementById('pointLightY').addEventListener('input', function() {
+  pointLightPosition[1] = parseFloat(this.value);
+  main(); // Re-render the scene
+});
+
+document.getElementById('pointLightZ').addEventListener('input', function() {
+  pointLightPosition[2] = parseFloat(this.value);
+  main(); // Re-render the scene
 });
 
 document.getElementById("scale").addEventListener("input", function() {
@@ -305,6 +342,10 @@ function main() {
   var u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
   var u_ViewPosition = gl.getUniformLocation(gl.program, 'u_ViewPosition');
   var u_Shininess = gl.getUniformLocation(gl.program, 'u_Shininess');
+  var u_UseAmbientLight = gl.getUniformLocation(gl.program, 'u_UseAmbientLight');
+  var u_UseDiffuseLight = gl.getUniformLocation(gl.program, 'u_UseDiffuseLight');
+  var u_UseSpecularLight = gl.getUniformLocation(gl.program, 'u_UseSpecularLight');
+
 
   // Setting the static uniform variables
   // Set the directional light color and direction
@@ -323,6 +364,14 @@ function main() {
 
   // Set the shininess factor for specular highlights (example: a moderate shine)
   gl.uniform1f(u_Shininess, 32.0);
+
+  // Set the values for the lighting flag uniforms
+  gl.uniform1i(u_UseAmbientLight, useAmbientLight ? 1 : 0);
+  gl.uniform1i(u_UseDiffuseLight, useDiffuseLight ? 1 : 0);
+  gl.uniform1i(u_UseSpecularLight, useSpecularLight ? 1 : 0);
+
+  // Update the point light position uniform
+  gl.uniform3fv(u_PointLightPosition, new Float32Array(pointLightPosition));
 
   if (!u_MvpMatrix || !u_LightColor || !u_LightDirection) { 
     console.log('Failed to get the storage location');
@@ -349,25 +398,32 @@ function main() {
   // Calculate both flat and smooth normals
   let flatNormals1 = calculateFlatNormalsIndexed(vertices, indices);
   let smoothNormals1 = calculateSmoothNormalsIndexed(vertices, indices);
-  let flatNormals2 = calculateFlatNormalsIndexed(vertices, indices); // Object 2
-  let smoothNormals2 = calculateSmoothNormalsIndexed(vertices, indices); // Object 2
+  
+  let normals1, normals2;
+  if (useGouraudShading || usePhongShading) {
+      // For Gouraud or Phong shading, use smooth normals
+      normals1 = smoothNormals1;
+      normals2 = calculateSmoothNormalsIndexed(vertices, indices); // For Object 2
+  } else {
+      // Default to flat shading
+      normals1 = flatNormals1;
+      normals2 = calculateFlatNormalsIndexed(vertices, indices); // For Object 2
+  }
 
-  // Rotate and translate vertices
-  let vertices1 = rotatePoints(rotation, vertices);
-  vertices1 = scalePoints(scaleAmount, vertices1);
-  vertices1 = translatePoints(moveAmount, vertices1);
+  // Rotate points if needed
+  let rotatedVertices1 = rotatePoints(rotation, vertices);
+  let rotatedVertices2 = rotatePoints(rotation2, vertices);
 
-  let vertices2 = rotatePoints(rotation2, vertices);
-  vertices2 = scalePoints(scaleAmount2, vertices2);
-  vertices2 = translatePoints(moveAmount2, vertices2);
+  // Apply transformations to vertices
+  let transformedVertices1 = scalePoints(scaleAmount, rotatedVertices1);
+  transformedVertices1 = translatePoints(moveAmount, transformedVertices1);
+  
+  let transformedVertices2 = scalePoints(scaleAmount2, rotatedVertices2);
+  transformedVertices2 = translatePoints(moveAmount2, transformedVertices2);
 
-  // Choose normals based on shading type
-  let normals1 = useFlatShading ? flatNormals1 : rotatePoints(rotation, smoothNormals1);
-  let normals2 = useFlatShading ? flatNormals2 : rotatePoints(rotation2, smoothNormals2);
-
-  // Draw objects
-  drawObj(vertices1, colors, normals1, indices, wireframe);
-  drawObj(vertices2, colors2, normals2, indices, wireframe2);
+  // Draw objects with the appropriate normals
+  drawObj(transformedVertices1, colors, normals1, indices, wireframe);
+  drawObj(transformedVertices2, colors2, normals2, indices, wireframe2);
 
   setupClickTracking();
 }

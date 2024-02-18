@@ -49,12 +49,17 @@
       <input type="range" id="shininess" min="1" max="128" value="32">
     </div>
     <label><input type="checkbox" id="toggleDirectionalLight" checked> Directional Light</label>
-    <br>
     <label><input type="checkbox" id="togglePointLight" checked> Point Light</label> 
+    <label>Point Light X: <input type="range" id="pointLightX" min="-200" max="200" value="-100"></label>
+    <label>Point Light Y: <input type="range" id="pointLightY" min="-200" max="200" value="100"></label>
+    <label>Point Light Z: <input type="range" id="pointLightZ" min="-200" max="200" value="100"></label>
     <br>
     <label><input type="checkbox" id="gouraudShading"> Gouraud Shading</label>
-    <br>
     <label><input type="checkbox" id="phongShading"> Phong Shading</label>
+    <br>
+    <label><input type="checkbox" id="ambientLight" checked> Ambient Light</label>
+    <label><input type="checkbox" id="diffuseLight" checked> Diffuse Light</label>
+    <label><input type="checkbox" id="specularLight" checked> Specular Light</label>
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>
     <script src="../lib/cuon-utils.js"></script>
