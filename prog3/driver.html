@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Prog2</title>
+    <title>Prog3</title>
   </head>
 
   <body onload="main()">
@@ -38,8 +38,23 @@
     <Label>Rotation X    </Label><input type="range" min="0" max="360" value="0", id = "rotationX2">
     <Label>Y    </Label><input type="range" min="0" max="360" value="0", id = "rotationY2">
     <Label>Z    </Label><input type="range" min="0" max="360" value="0", id = "rotationZ2">
-    <label><input type="checkbox" id="toggleDirectionalLight" checked> Toggle Directional Light</label>
-    <label><input type="checkbox" id="togglePointLight" checked> Toggle Point Light</label> 
+    <div>
+      <label>Directional Light Color: </label>
+      <input type="color" id="dirLightColor" value="#ffffff">
+      
+      <label>Point Light Color: </label>
+      <input type="color" id="pointLightColor" value="#ffcc66">
+
+      <label>Shininess: </label>
+      <input type="range" id="shininess" min="1" max="128" value="32">
+    </div>
+    <label><input type="checkbox" id="toggleDirectionalLight" checked> Directional Light</label>
+    <br>
+    <label><input type="checkbox" id="togglePointLight" checked> Point Light</label> 
+    <br>
+    <label><input type="checkbox" id="gouraudShading"> Gouraud Shading</label>
+    <br>
+    <label><input type="checkbox" id="phongShading"> Phong Shading</label>
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>
     <script src="../lib/cuon-utils.js"></script>

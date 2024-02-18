@@ -1,4 +1,4 @@
-// Prog2 based on: LightedCube.js (c) 2012 matsuda
+// Prog2 based on: LightedCube.js (c) 2012 Matsuda & Lea 
 // Prog3 based on: Hall of Fame code given from Marcus Williamson
 
 // Vertex shader program
@@ -11,6 +11,7 @@ var VSHADER_SOURCE =
   'uniform vec3 u_LightDirection;\n' +  // Directional light direction (normalized)
   'uniform vec3 u_PointLightColor;\n' + // Point light color
   'uniform vec3 u_PointLightPosition;\n' + // Point light position
+  'uniform vec3 u_AmbientLight;\n' +    // Ambient light color
   'varying vec4 v_Color;\n' +
   'void main() {\n' +
   '  gl_Position = u_MvpMatrix * a_Position;\n' +
@@ -25,8 +26,11 @@ var VSHADER_SOURCE =
   '  float nDotLPoint = max(dot(lightDirection, normal), 0.0);\n' +
   '  vec3 pointLight = u_PointLightColor * a_Color.rgb * nDotLPoint;\n' +
 
-  // Combine the two lights
-  '  vec3 combinedLight = directionalLight + pointLight;\n' +
+  // Ambient light calculation
+  '  vec3 ambientLight = u_AmbientLight * a_Color.rgb;\n' +
+
+  // Combine the two lights with ambient light
+  '  vec3 combinedLight = directionalLight + pointLight + ambientLight;\n' +
   '  v_Color = vec4(combinedLight, a_Color.a);\n' +
   '}\n';
 
@@ -35,9 +39,19 @@ var FSHADER_SOURCE =
   '#ifdef GL_ES\n' +
   'precision mediump float;\n' +
   '#endif\n' +
+  'uniform vec3 u_ViewPosition;\n' +   // View/camera position
+  'uniform float u_Shininess;\n' +     // Shininess factor for specular light
   'varying vec4 v_Color;\n' +
   'void main() {\n' +
   '  gl_FragColor = v_Color;\n' +
+
+  // Specular light calculation (example, needs vertex position and normal passed from vertex shader)
+  '  vec3 viewDir = normalize(u_ViewPosition - v_FragPos);\n' +
+  '  vec3 reflectDir = reflect(-lightDir, normal);\n' +
+  '  float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Shininess);\n' +
+  '  vec3 specular = u_LightColor * spec;\n' + // Assuming using the same light color for specular highlights
+
+  '  gl_FragColor = vec4(v_Color.rgb + specular, v_Color.a);\n' +
   '}\n';
 
 // Directional light
@@ -60,10 +74,41 @@ let wireframe2 = false;
 let scaleAmount2 = 0.5;
 let moveAmount2 = new Float32Array([1.0, 0.0, 0.0]);  // x, y, z
 let rotation2 = [0, 0, 0];
+let useFlatShading = true; // Default to flat shading
+let useGouraudShading = false;
+let usePhongShading = false;
 
 document.getElementById("wireframe").addEventListener("change", function() {
     wireframe = this.checked;
     main();
+});
+
+document.getElementById("toggleDirectionalLight").addEventListener("change", function() {
+  directionalLightColor = this.checked ? [1.0, 1.0, 1.0] : [0.0, 0.0, 0.0];
+  main();
+});
+
+document.getElementById("togglePointLight").addEventListener("change", function() {
+  pointLightColor = this.checked ? [1.0, 0.8, 0.2] : [0.0, 0.0, 0.0];
+  main();
+});
+
+document.getElementById("gouraudShading").addEventListener("change", function() {
+  useGouraudShading = this.checked;
+  if (this.checked) {
+      document.getElementById("phongShading").checked = false;
+      usePhongShading = false;
+  }
+  main();
+});
+
+document.getElementById("phongShading").addEventListener("change", function() {
+  usePhongShading = this.checked;
+  if (this.checked) {
+      document.getElementById("gouraudShading").checked = false;
+      useGouraudShading = false;
+  }
+  main();
 });
 
 document.getElementById("scale").addEventListener("input", function() {
@@ -142,14 +187,19 @@ rotation2[2] = this.value;
 main();
 });
 
-document.getElementById("toggleDirectionalLight").addEventListener("change", function() {
-  directionalLightColor = this.checked ? [1.0, 1.0, 1.0] : [0.0, 0.0, 0.0];
-  main();
+document.getElementById('dirLightColor').addEventListener('input', function() {
+  directionalLightColor = hexToRgb(this.value);
+  main();  // Redraw scene with new light color
 });
 
-document.getElementById("togglePointLight").addEventListener("change", function() {
-  pointLightColor = this.checked ? [1.0, 0.8, 0.2] : [0.0, 0.0, 0.0];
-  main();
+document.getElementById('pointLightColor').addEventListener('input', function() {
+  pointLightColor = hexToRgb(this.value);
+  main();  // Redraw scene with new light color
+});
+
+document.getElementById('shininess').addEventListener('input', function() {
+  shininess = parseFloat(this.value);
+  main();  // Redraw scene with new shininess value
 });
 
 
@@ -165,6 +215,22 @@ if (!gl) {
 // Initialize shaders
 if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
   console.log('Failed to intialize shaders.');
+}
+
+// Helper function to convert hex color to RGB
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16) / 255,
+        g: parseInt(result[2], 16) / 255,
+        b: parseInt(result[3], 16) / 255
+    } : null;
+}
+
+// Add a toggle function or mechanism
+function toggleShading() {
+  useFlatShading = !useFlatShading;
+  main(); // Re-render the scene with the new shading type
 }
 
 function main() {
@@ -236,7 +302,11 @@ function main() {
   // Get the storage locations of the point light variables
   var u_PointLightColor = gl.getUniformLocation(gl.program, 'u_PointLightColor');
   var u_PointLightPosition = gl.getUniformLocation(gl.program, 'u_PointLightPosition');
+  var u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
+  var u_ViewPosition = gl.getUniformLocation(gl.program, 'u_ViewPosition');
+  var u_Shininess = gl.getUniformLocation(gl.program, 'u_Shininess');
 
+  // Setting the static uniform variables
   // Set the directional light color and direction
   gl.uniform3fv(u_LightColor, directionalLightColor);
   gl.uniform3fv(u_LightDirection, new Vector3(lightDirection).elements);
@@ -244,6 +314,15 @@ function main() {
   // Set the point light color and position
   gl.uniform3fv(u_PointLightColor, pointLightColor);
   gl.uniform3fv(u_PointLightPosition, new Vector3(pointLightPosition).elements);
+
+  // Set the ambient light color (example: soft white light)
+  gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
+
+  // Set the viewer's position (example: the camera's position)
+  gl.uniform3f(u_ViewPosition, 0.0, 0.0, 5.0);
+
+  // Set the shininess factor for specular highlights (example: a moderate shine)
+  gl.uniform1f(u_Shininess, 32.0);
 
   if (!u_MvpMatrix || !u_LightColor || !u_LightDirection) { 
     console.log('Failed to get the storage location');
@@ -267,30 +346,120 @@ function main() {
   // Clear color and depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  // Calculate both flat and smooth normals
+  let flatNormals1 = calculateFlatNormalsIndexed(vertices, indices);
+  let smoothNormals1 = calculateSmoothNormalsIndexed(vertices, indices);
+  let flatNormals2 = calculateFlatNormalsIndexed(vertices, indices); // Object 2
+  let smoothNormals2 = calculateSmoothNormalsIndexed(vertices, indices); // Object 2
+
+  // Rotate and translate vertices
   let vertices1 = rotatePoints(rotation, vertices);
-  let normals1 = rotatePoints(rotation, normals);
   vertices1 = scalePoints(scaleAmount, vertices1);
   vertices1 = translatePoints(moveAmount, vertices1);
-  drawObj(vertices1, colors, normals1, indices, wireframe);
 
   let vertices2 = rotatePoints(rotation2, vertices);
-  let normals2 = rotatePoints(rotation2, normals);
   vertices2 = scalePoints(scaleAmount2, vertices2);
   vertices2 = translatePoints(moveAmount2, vertices2);
-  drawObj(vertices2, colors2, normals2, indices, wireframe2);
-  // // Set the vertex coordinates, the color and the normal
-  // var n = initVertexBuffers(gl, vertices, colors, normals, indices);
-  // if (n < 0) {
-  //   console.log('Failed to set the vertex information');
-  //   return;
-  // }
 
-  // if (wireframe) {
-  //   gl.drawElements(gl.LINE_LOOP, n, gl.UNSIGNED_BYTE, 0);   // Draw the cube (wireframe)
-  // } else {
-  //   gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);   // Draw the cube
-  // }
-  
+  // Choose normals based on shading type
+  let normals1 = useFlatShading ? flatNormals1 : rotatePoints(rotation, smoothNormals1);
+  let normals2 = useFlatShading ? flatNormals2 : rotatePoints(rotation2, smoothNormals2);
+
+  // Draw objects
+  drawObj(vertices1, colors, normals1, indices, wireframe);
+  drawObj(vertices2, colors2, normals2, indices, wireframe2);
+
+  setupClickTracking();
+}
+
+function calculateFlatNormalsIndexed(vertices, indices) {
+  let normals = [];
+
+  for (let i = 0; i < indices.length; i += 3) {
+      // Get the indices of the vertices that make up this triangle
+      let idx0 = indices[i] * 3;
+      let idx1 = indices[i + 1] * 3;
+      let idx2 = indices[i + 2] * 3;
+
+      // Extract the three vertices
+      let v0 = {x: vertices[idx0], y: vertices[idx0 + 1], z: vertices[idx0 + 2]};
+      let v1 = {x: vertices[idx1], y: vertices[idx1 + 1], z: vertices[idx1 + 2]};
+      let v2 = {x: vertices[idx2], y: vertices[idx2 + 1], z: vertices[idx2 + 2]};
+
+      // Calculate two edges from the three vertices
+      let edge1 = {x: v1.x - v0.x, y: v1.y - v0.y, z: v1.z - v0.z};
+      let edge2 = {x: v2.x - v0.x, y: v2.y - v0.y, z: v2.z - v0.z};
+
+      // Cross product to get the normal
+      let nx = edge1.y * edge2.z - edge1.z * edge2.y;
+      let ny = edge1.z * edge2.x - edge1.x * edge2.z;
+      let nz = edge1.x * edge2.y - edge1.y * edge2.x;
+
+      // Normalize the normal
+      let length = Math.sqrt(nx * nx + ny * ny + nz * nz);
+      nx /= length;
+      ny /= length;
+      nz /= length;
+
+      // Add the normal for each vertex of the triangle
+      for (let j = 0; j < 3; j++) {
+          normals.push(nx, ny, nz);
+      }
+  }
+
+  return new Float32Array(normals);
+}
+
+function calculateSmoothNormalsIndexed(vertices, indices) {
+  let normals = new Array(vertices.length).fill(0); // Initialize normals array
+  normals = normals.map(() => new Vector3([0, 0, 0])); // Each normal is a Vector3
+
+  // Iterate over each face (triangle) using indices
+  for (let i = 0; i < indices.length; i += 3) {
+      // Get the vertices of the triangle
+      let v1 = new Vector3([
+          vertices[indices[i] * 3], vertices[indices[i] * 3 + 1], vertices[indices[i] * 3 + 2]
+      ]);
+      let v2 = new Vector3([
+          vertices[indices[i + 1] * 3], vertices[indices[i + 1] * 3 + 1], vertices[indices[i + 1] * 3 + 2]
+      ]);
+      let v3 = new Vector3([
+          vertices[indices[i + 2] * 3], vertices[indices[i + 2] * 3 + 1], vertices[indices[i + 2] * 3 + 2]
+      ]);
+
+      // Calculate normal for this face (cross product)
+      let edge1 = new Vector3(v2.elements).subtract(v1);
+      let edge2 = new Vector3(v3.elements).subtract(v1);
+      let faceNormal = new Vector3(edge1.elements).cross(edge2).normalize();
+
+      // Add this normal to the normals of all three vertices
+      normals[indices[i]].add(faceNormal);
+      normals[indices[i + 1]].add(faceNormal);
+      normals[indices[i + 2]].add(faceNormal);
+  }
+
+  // Normalize all normals
+  for (let i = 0; i < normals.length; i++) {
+      normals[i].normalize();
+  }
+
+  // Flatten the normals array for WebGL
+  let flattenedNormals = [];
+  for (let i = 0; i < normals.length; i++) {
+      flattenedNormals.push(normals[i].elements[0], normals[i].elements[1], normals[i].elements[2]);
+  }
+
+  return new Float32Array(flattenedNormals);
+}
+
+function setupClickTracking() {
+  let clickCount = 0;
+  document.addEventListener('click', function(event) {
+      if (!document.getElementById('webgl').contains(event.target)) {
+          clickCount++;
+          document.getElementById('outsideClicksCounter').textContent = `Outside Clicks: ${clickCount}`;
+      }
+  });
 }
 
 function drawObj(vertices, colors, normals, indices, wireframe) {
