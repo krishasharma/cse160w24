@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Prog3</title>
+  </head>
+
+  <body onload="main()">
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+    <br>
+    <Label>Object 1 (red)</Label>
+    <br>
+    <Label>Wireframe</Label> <input type="checkbox" id="wireframe"></button>
+    <br>
+    <Label>Scale    </Label><input type="range" min="1" max="100" value="50", id = "scale">
+    <br>
+    <Label>Translate X    </Label><input type="range" min="-100" max="100" value="50", id = "moveX">
+    <Label>Y    </Label><input type="range" min="-100" max="100" value="0", id = "moveY">
+    <Label>Z    </Label><input type="range" min="-100" max="100" value="0", id = "moveZ">
+    <br>
+    <Label>Rotation X    </Label><input type="range" min="0" max="360" value="0", id = "rotationX">
+    <Label>Y    </Label><input type="range" min="0" max="360" value="0", id = "rotationY">
+    <Label>Z    </Label><input type="range" min="0" max="360" value="0", id = "rotationZ">
+    <br>
+    <br>
+    <Label>Object 2 (green)</Label>
+    <br>
+    <Label>Wireframe</Label> <input type="checkbox" id="wireframe2"></button>
+    <br>
+    <Label>Scale    </Label><input type="range" min="1" max="100" value="25", id = "scale2">
+    <br>
+    <Label>Translate X    </Label><input type="range" min="-100" max="100" value="-50", id = "moveX2">
+    <Label>Y    </Label><input type="range" min="-100" max="100" value="0", id = "moveY2">
+    <Label>Z    </Label><input type="range" min="-100" max="100" value="0", id = "moveZ2">
+    <br>
+    <Label>Rotation X    </Label><input type="range" min="0" max="360" value="0", id = "rotationX2">
+    <Label>Y    </Label><input type="range" min="0" max="360" value="0", id = "rotationY2">
+    <Label>Z    </Label><input type="range" min="0" max="360" value="0", id = "rotationZ2">
+    <div>
+      <label>Directional Light Color: </label>
+      <input type="color" id="dirLightColor" value="#ffffff">
+      
+      <label>Point Light Color: </label>
+      <input type="color" id="pointLightColor" value="#ffcc66">
+
+      <label>Shininess: </label>
+      <input type="range" id="shininess" min="1" max="128" value="32">
+    </div>
+    <label><input type="checkbox" id="toggleDirectionalLight" checked> Directional Light</label>
+    <label><input type="checkbox" id="togglePointLight" checked> Point Light</label> 
+    <br>
+    <label>Point Light X: <input type="range" id="pointLightX" min="-200" max="200" value="-100"></label>
+    <label>Point Light Y: <input type="range" id="pointLightY" min="-200" max="200" value="100"></label>
+    <label>Point Light Z: <input type="range" id="pointLightZ" min="-200" max="200" value="100"></label>
+    <br>
+    <label>Camera Position X: <input type="range" id="camPosX" min="-10" max="10" value="0"></label>
+    <label>Y: <input type="range" id="camPosY" min="-10" max="10" value="0"></label>
+    <label>Z: <input type="range" id="camPosZ" min="-10" max="10" value="5"></label>
+    <br>
+    <label>Camera LookAt X: <input type="range" id="camLookAtX" min="-10" max="10" value="0"></label>
+    <label>Y: <input type="range" id="camLookAtY" min="-10" max="10" value="0"></label>
+    <label>Z: <input type="range" id="camLookAtZ" min="-10" max="10" value="0"></label>
+    <br>
+    <label>FOV: <input type="range" id="fov" min="30" max="120" value="60"></label>
+    <br>
+    <label><input type="checkbox" id="togglePerspective"> Use Perspective Projection</label>
+    <label><input type="checkbox" id="ambientLight" checked> Ambient Light</label>
+    <label><input type="checkbox" id="diffuseLight" checked> Diffuse Light</label>
+    <label><input type="checkbox" id="specularLight" checked> Specular Light</label>
+    <br>
+    <label><input type="checkbox" id="gouraudShading"> Gouraud Shading</label>
+    <label><input type="checkbox" id="phongShading"> Phong Shading</label>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
