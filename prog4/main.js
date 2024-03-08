@@ -68,6 +68,19 @@ var camLookAtX = 0, camLookAtY = 0, camLookAtZ = 0;
 var fov = 60
 var usePerspective = false;
 
+// Camera waypoints
+var waypoints = [
+  { position: [0, 0, 5], lookAt: [0, 0, 0] }, // Starting position
+  { position: [5, 5, 5], lookAt: [1, 1, 0] },
+  { position: [-5, 5, 5], lookAt: [-1, 1, 0] },
+  { position: [-5, -5, 5], lookAt: [-1, -1, 0] },
+  { position: [5, -5, 5], lookAt: [1, -1, 0] },
+  { position: [0, 0, 5], lookAt: [0, 0, 0] }  // Returning to start
+];
+var currentWaypointIndex = 0;
+var animationProgress = 0; // Progress between 0 and 1
+var animationSpeed = 0.01; // Adjust for faster or slower animation
+
 document.getElementById('pointLightX').value = pointLightPosition[0];
 document.getElementById('pointLightY').value = pointLightPosition[1];
 document.getElementById('pointLightZ').value = pointLightPosition[2];
@@ -236,38 +249,38 @@ document.getElementById("wireframe2").addEventListener("change", function() {
 });
 
 document.getElementById("scale2").addEventListener("input", function() {
-scaleAmount2 = this.value / (100 / maxScale);
-main();
+  scaleAmount2 = this.value / (100 / maxScale);
+  main();
 });
 
 document.getElementById("moveX2").addEventListener("input", function() {
-moveAmount2[0] = this.value / (100 / maxMove[0]);
-main();
+  moveAmount2[0] = this.value / (100 / maxMove[0]);
+  main();
 });
 
 document.getElementById("moveY2").addEventListener("input", function() {
-moveAmount2[1] = this.value / (100 / maxMove[1]);
-main();
+  moveAmount2[1] = this.value / (100 / maxMove[1]);
+  main();
 });
 
 document.getElementById("moveZ2").addEventListener("input", function() {
-moveAmount2[2] = this.value / (100 / maxMove[2]);
-main();
+  moveAmount2[2] = this.value / (100 / maxMove[2]);
+  main();
 });
 
 document.getElementById("rotationX2").addEventListener("input", function() {
-rotation2[0] = this.value;
-main();
+  rotation2[0] = this.value;
+  main();
 });
 
 document.getElementById("rotationY2").addEventListener("input", function() {
-rotation2[1] = this.value;
-main();
+  rotation2[1] = this.value;
+  main();
 });
 
 document.getElementById("rotationZ2").addEventListener("input", function() {
-rotation2[2] = this.value;
-main();
+  rotation2[2] = this.value;
+  main();
 });
 
 document.getElementById('dirLightColor').addEventListener('input', function() {
@@ -283,6 +296,12 @@ document.getElementById('pointLightColor').addEventListener('input', function() 
 document.getElementById('shininess').addEventListener('input', function() {
   shininess = parseFloat(this.value);
   main();  // Redraw scene with new shininess value
+});
+
+document.getElementById('startAnimation').addEventListener('click', function() {
+  currentWaypointIndex = 0; // Reset to start
+  animationProgress = 0;    // Reset progress
+  animateCamera();          // Begin the animation
 });
 
 // Retrieve <canvas> element
@@ -676,4 +695,34 @@ function rotatePoints(angle, points) {
     rotatedPoints[i+2] = rotMatrix[8] * points[i] + rotMatrix[9] * points[i+1] + rotMatrix[10] * points[i+2];  // z
   }
   return rotatedPoints;
+}
+
+function lerp(start, end, t) {
+  return (1 - t) * start + t * end;
+}
+
+function animateCamera() {
+  // Check if we have more waypoints to go through
+  if (currentWaypointIndex < waypoints.length - 1) {
+      var currentWaypoint = waypoints[currentWaypointIndex];
+      var nextWaypoint = waypoints[currentWaypointIndex + 1];
+
+      // Interpolate position and lookAt for each component (x, y, z)
+      camPosX = lerp(currentWaypoint.position[0], nextWaypoint.position[0], animationProgress);
+      camPosY = lerp(currentWaypoint.position[1], nextWaypoint.position[1], animationProgress);
+      camPosZ = lerp(currentWaypoint.position[2], nextWaypoint.position[2], animationProgress);
+      camLookAtX = lerp(currentWaypoint.lookAt[0], nextWaypoint.lookAt[0], animationProgress);
+      camLookAtY = lerp(currentWaypoint.lookAt[1], nextWaypoint.lookAt[1], animationProgress);
+      camLookAtZ = lerp(currentWaypoint.lookAt[2], nextWaypoint.lookAt[2], animationProgress);
+
+      // Increment the progress and loop or move to next waypoint
+      animationProgress += animationSpeed;
+      if (animationProgress >= 1) {
+          currentWaypointIndex++;
+          animationProgress = 0;
+      }
+
+      requestAnimationFrame(animateCamera); // Continue the animation loop
+  }
+  main(); // Re-render the scene with the updated camera position
 }

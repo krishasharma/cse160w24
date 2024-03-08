@@ -2,35 +2,42 @@
 
 ## Overview
 
-Understand and implement various lighting and shading techniques in WebGL.
+This project explores advanced camera control and perspective projection in WebGL, allowing users to interactively navigate through a virtual world with different views and lighting effects.
 
 ## Implementation Details and Features
 
-### Smooth Shading
+### Camera Control
 
-- **Gouraud Shading:** Perform lighting calculations per vertex. Interpolate these colors across the polygon in the fragment shader.
-- **Phong Shading:** Interpolate vertex normals across the polygon and perform lighting calculations for each point within the polygon in the fragment shader.
+- **Navigation:** Users can move the camera, rotate it, and zoom in/out to explore the virtual world.
+- **Transformations:** Combines translation, rotation, and scaling to control the camera's position and orientation.
+- **World Transformation:** Instead of moving objects, the entire world is transformed relative to the camera's view.
+
+### Perspective Projection
+
+- **Toggle Between Views:** Users can switch between orthographic and perspective views to experience different visual perspectives.
+- **Field of View (FOV):** Implements zoom functionality by adjusting the FOV. Smaller FOV results in a larger zoom effect.
 
 ### Lighting Effects
 
-- **Ambient Lighting:** Add a constant lighting term to simulate indirect light.
-- **Specular Lighting:** Implement highlights by considering the viewer's position relative to the light source and the surface.
+- **Specular Highlights:** View-dependent lighting effects that change based on the camera's position relative to light sources and object surfaces.
+- **Ambient, Diffuse, and Specular Lighting:** Full implementation of these lighting components for a realistic rendering of the scene.
 
-### Light Sources
+### Advanced Features
 
-- **Directional Light:** Implement a toggle to turn this light source on and off.
-- **Point Light:** Position at `(-100,100,100)` with an orange color `(1.0, 0.8, 0.2)`. Implement a toggle for this light source and allow the user to move it.
+- **Linear and Cubic Interpolation:** Basic linear interpolation for camera movement and advanced cubic curve interpolation for smoother paths and animations.
 
 ## Usage
 
 1. Open the `driver.html` file in a modern web browser.
-2. Use the sliders and togles to adjust the necessary elements of the rendering. 
+2. Use on-screen controls to navigate the camera, switch between projection modes, and observe lighting changes.
+3. Experiment with different camera paths and lighting setups to explore the virtual world.
 
 ## Development
 
-This project was developed using pure WebGL and JavaScript without relying on external 3D libraries.
+Developed using WebGL for rendering, with custom implementations of lighting and camera control logic in JavaScript, without external 3D libraries.
 
 ## Author
 
 - **Name:** Krisha Sharma
-- **Date:** 01.30.24
+- **Date:** 03.04.24
+
