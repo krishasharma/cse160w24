@@ -71,10 +71,13 @@
     <label><input type="checkbox" id="gouraudShading"> Gouraud Shading</label>
     <label><input type="checkbox" id="phongShading"> Phong Shading</label>
     <button id="startAnimation">Start Camera Animation</button>
-    <script src="../lib/webgl-utils.js"></script>
-    <script src="../lib/webgl-debug.js"></script>
-    <script src="../lib/cuon-utils.js"></script>
-    <script src="../lib/cuon-matrix.js"></script>
+    <div>
+      Zoom: <input type="range" id="zoomSlider" min="10" max="100" value="50">
+    </div>
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/cuon-matrix.js"></script>
     <script src="main.js"></script>
   </body>
 </html>

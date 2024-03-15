@@ -49,8 +49,13 @@ var FSHADER_SOURCE =
   '  float spec = pow(max(dot(viewDir, reflectDir), 0.0), u_Shininess);\n' +
   '  vec3 specular = u_LightColor * spec;\n' +
 
+  // Directional light calculation
+  '  vec3 dirLightDir = normalize(-u_LightDirection);\n' +
+  '  float diff = max(dot(normal, dirLightDir), 0.0);\n' +
+  '  vec3 directional = diff * u_LightColor;\n' +
+
   // Combine all components and output the final color
-  '  vec3 finalColor = ambient + diffuse + specular;\n' +
+  '  vec3 finalColor = ambient + diffuse + specular + directional;\n' +
   '  gl_FragColor = vec4(finalColor, v_Color.a);\n' +
   '}\n';
 
@@ -67,6 +72,10 @@ var camPosX = 0, camPosY = 0, camPosZ = 5;
 var camLookAtX = 0, camLookAtY = 0, camLookAtZ = 0;
 var fov = 60
 var usePerspective = false;
+var zoom = 1.0; // Initial zoom level
+var zoomSpeed = 0.1; // Speed of zooming
+var minZoom = 0.1; // Minimum zoom level
+var maxZoom = 10.0; // Maximum zoom level
 
 // Camera waypoints
 var waypoints = [
@@ -92,7 +101,6 @@ let wireframe = false;
 let scaleAmount = 1;
 let moveAmount = new Float32Array([-1.0, 0.0, 0.0]);  // x, y, z
 let rotation = [0, 0, 0];
-
 let wireframe2 = false;
 let scaleAmount2 = 0.5;
 let moveAmount2 = new Float32Array([1.0, 0.0, 0.0]);  // x, y, z
@@ -298,6 +306,11 @@ document.getElementById('shininess').addEventListener('input', function() {
   main();  // Redraw scene with new shininess value
 });
 
+document.getElementById('zoomSlider').addEventListener('input', function() {
+  zoom = this.value / 50; // Adjust this calculation based on your zoom logic
+  main(); // Re-render the scene
+});
+
 document.getElementById('startAnimation').addEventListener('click', function() {
   currentWaypointIndex = 0; // Reset to start
   animationProgress = 0;    // Reset progress
@@ -396,8 +409,17 @@ function main() {
   gl.clearColor(1, 1, 1, 1);
   gl.enable(gl.DEPTH_TEST);
 
+  // Initialize shaders
+  if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+    console.log('Failed to initialize shaders.');
+    return;
+  }
+
+  // Use the program ?
+  gl.useProgram(gl.program);
+
   // Get the storage locations of uniform variables and so on
-  var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
+  // var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
   var u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
   var u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
   // Get the storage locations of the point light variables
@@ -412,40 +434,36 @@ function main() {
   // Get the uniform locations for the view and projection matrices in the shader program
   var u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
   var u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
-    
-
 
   // Setting the static uniform variables
   // Set the directional light color and direction
   gl.uniform3fv(u_LightColor, directionalLightColor);
   gl.uniform3fv(u_LightDirection, new Vector3(lightDirection).elements);
-
   // Set the point light color and position
   gl.uniform3fv(u_PointLightColor, pointLightColor);
   gl.uniform3fv(u_PointLightPosition, new Vector3(pointLightPosition).elements);
-
   // Set the ambient light color (example: soft white light)
-  gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
-
+  gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2)
   // Set the viewer's position (example: the camera's position)
   gl.uniform3f(u_ViewPosition, 0.0, 0.0, 5.0);
-
   // Set the shininess factor for specular highlights (example: a moderate shine)
   gl.uniform1f(u_Shininess, 32.0);
-
   // Set the values for the lighting flag uniforms
   gl.uniform1i(u_UseAmbientLight, useAmbientLight ? 1 : 0);
   gl.uniform1i(u_UseDiffuseLight, useDiffuseLight ? 1 : 0);
   gl.uniform1i(u_UseSpecularLight, useSpecularLight ? 1 : 0);
-
   // Update the point light position uniform
   gl.uniform3fv(u_PointLightPosition, new Float32Array(pointLightPosition));
 
+  /*
+  // WTF IS THIS KAIA I THINK THIS IS THE ERROR THAT IS TRIGGERING
   if (!u_MvpMatrix || !u_LightColor || !u_LightDirection) { 
     console.log('Failed to get the storage location');
     return;
   }
+  */
 
+  // TODO KAIA 
   // Set the light color (white)
   gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
   // Set the light direction (in the world coordinate)
@@ -461,41 +479,37 @@ function main() {
   // to use a perspective projection or an orthographic projection
   var projMatrix = new Matrix4();
   if (usePerspective) {
+      // Adjust FOV based on zoom 
+      var adjustedFOV = fov / zoom;
       // Set a perspective projection: fov, aspect, near, far
-      projMatrix.setPerspective(fov, canvas.width / canvas.height, 1, 100);
+      projMatrix.setPerspective(adjustedFOV, canvas.width / canvas.height, 1, 100);
   } else {
-      // Set an orthographic projection: left, right, bottom, top, near, far
-      projMatrix.setOrtho(-1, 1, -1, 1, 0.1, 100);
+      // Set and adjust orthographic projection: left, right, bottom, top, near, far
+      projMatrix.setOrtho(-1 * zoom, 1 * zoom, -1 * zoom, 1 * zoom, 0.1, 100);
   }
+
   // Pass the view and projection matrices to the shader program
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
   gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
 
-  /*
-  // Calculate the view projection matrix
-  var mvpMatrix = new Matrix4();    // Model view projection matrix
-  mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);
-  // Pass the model view projection matrix to the variable u_MvpMatrix
-  gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
-  */
-
-  // Clear color and depth buffer
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-  // Calculate both flat and smooth normals
+  // Calculate both flat and smooth normals for object 1
   let flatNormals1 = calculateFlatNormalsIndexed(vertices, indices);
   let smoothNormals1 = calculateSmoothNormalsIndexed(vertices, indices);
-  
+
+  // Object 2 uses the same geometry (vertices and indices)
+  let flatNormals2 = calculateFlatNormalsIndexed(vertices, indices);
+  let smoothNormals2 = calculateSmoothNormalsIndexed(vertices, indices);
+
+  // Then use these normals based on the shading type
   let normals1, normals2;
   if (useGouraudShading || usePhongShading) {
       // For Gouraud or Phong shading, use smooth normals
       normals1 = smoothNormals1;
-      normals2 = calculateSmoothNormalsIndexed(vertices, indices); // For Object 2
+      normals2 = smoothNormals2;
   } else {
       // Default to flat shading
       normals1 = flatNormals1;
-      normals2 = calculateFlatNormalsIndexed(vertices, indices); // For Object 2
+      normals2 = flatNormals2;
   }
 
   // Rotate points if needed
@@ -555,42 +569,55 @@ function calculateFlatNormalsIndexed(vertices, indices) {
 }
 
 function calculateSmoothNormalsIndexed(vertices, indices) {
-  let normals = new Array(vertices.length).fill(0); // Initialize normals array
-  normals = normals.map(() => new Vector3([0, 0, 0])); // Each normal is a Vector3
+  let normals = new Array(vertices.length / 3).fill(null);
+  normals = normals.map(() => [0, 0, 0]);
 
-  // Iterate over each face (triangle) using indices
   for (let i = 0; i < indices.length; i += 3) {
-      // Get the vertices of the triangle
-      let v1 = new Vector3([
-          vertices[indices[i] * 3], vertices[indices[i] * 3 + 1], vertices[indices[i] * 3 + 2]
-      ]);
-      let v2 = new Vector3([
-          vertices[indices[i + 1] * 3], vertices[indices[i + 1] * 3 + 1], vertices[indices[i + 1] * 3 + 2]
-      ]);
-      let v3 = new Vector3([
-          vertices[indices[i + 2] * 3], vertices[indices[i + 2] * 3 + 1], vertices[indices[i + 2] * 3 + 2]
-      ]);
+    // Get vertices
+    let idx1 = indices[i] * 3;
+    let idx2 = indices[i + 1] * 3;
+    let idx3 = indices[i + 2] * 3;
 
-      // Calculate normal for this face (cross product)
-      let edge1 = new Vector3(v2.elements).subtract(v1);
-      let edge2 = new Vector3(v3.elements).subtract(v1);
-      let faceNormal = new Vector3(edge1.elements).cross(edge2).normalize();
+    let v1 = [vertices[idx1], vertices[idx1 + 1], vertices[idx1 + 2]];
+    let v2 = [vertices[idx2], vertices[idx2 + 1], vertices[idx2 + 2]];
+    let v3 = [vertices[idx3], vertices[idx3 + 1], vertices[idx3 + 2]];
 
-      // Add this normal to the normals of all three vertices
-      normals[indices[i]].add(faceNormal);
-      normals[indices[i + 1]].add(faceNormal);
-      normals[indices[i + 2]].add(faceNormal);
+    // Calculate two edges from the three vertices
+    let edge1 = [v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2]];
+    let edge2 = [v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2]];
+
+    // Cross product to get the normal
+    let nx = edge1[1] * edge2[2] - edge1[2] * edge2[1];
+    let ny = edge1[2] * edge2[0] - edge1[0] * edge2[2];
+    let nz = edge1[0] * edge2[1] - edge1[1] * edge2[0];
+
+    // Normalize the normal
+    let length = Math.sqrt(nx * nx + ny * ny + nz * nz);
+    nx /= length;
+    ny /= length;
+    nz /= length;
+
+    // Add this normal to the normals of all three vertices
+    for (let j = 0; j < 3; j++) {
+      let index = indices[i + j];
+      normals[index][0] += nx;
+      normals[index][1] += ny;
+      normals[index][2] += nz;
+    }
   }
 
   // Normalize all normals
   for (let i = 0; i < normals.length; i++) {
-      normals[i].normalize();
+    let length = Math.sqrt(normals[i][0] * normals[i][0] + normals[i][1] * normals[i][1] + normals[i][2] * normals[i][2]);
+    normals[i][0] /= length;
+    normals[i][1] /= length;
+    normals[i][2] /= length;
   }
 
   // Flatten the normals array for WebGL
   let flattenedNormals = [];
   for (let i = 0; i < normals.length; i++) {
-      flattenedNormals.push(normals[i].elements[0], normals[i].elements[1], normals[i].elements[2]);
+    flattenedNormals.push(...normals[i]);
   }
 
   return new Float32Array(flattenedNormals);
