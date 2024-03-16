@@ -6,6 +6,10 @@ Interactive 2D drawing.
 # prog1
 Simple Wireframe model; 3D rendering.
 # prog2
-Transforamtion and Flat Shading.
+Transformation and Flat Shading.
 # prog3 
-Smooth shading and Lighting
+Smooth Shading and Lighting
+# prog4 
+Camera Control and Perspective Projection.
+# prog5 
+Contest! Solar System?
