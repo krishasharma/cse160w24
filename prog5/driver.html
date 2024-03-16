@@ -1,36 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Interactive Three.js Scene</title>
+    <meta charset="UTF-8">
+    <title>Solar System</title>
     <style>
-        .controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 100;
-        }
+        body { margin: 0; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <label for="zoom">Zoom:</label>
-        <input type="range" id="zoom" min="1" max="10" value="5"><br>
-
-        <label for="lightToggle">Toggle Light:</label>
-        <input type="checkbox" id="lightToggle" checked><br>
-        <label>
-            <input type="checkbox" id="ambientLightToggle" checked>
-            Ambient Light
-        </label>
-        <label>
-            <input type="checkbox" id="directionalLightToggle" checked>
-            Directional Light
-        </label>
-        <!-- Slider for controlling camera rotation -->
-        <label for="cameraRotation">Rotate Camera:</label>
-        <input type="range" id="cameraRotation" min="0" max="360" value="0" step="1">
-    </div>
-
     <script type="module" src="main.js"></script>
 </body>
 </html>
