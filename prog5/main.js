@@ -9,7 +9,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000); // Black for space
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(15, 10, -20);
+camera.position.set(20, 15, -25);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -31,35 +31,39 @@ const sunlight = new THREE.PointLight(0xffffff, 2, 100);
 sunlight.position.set(0, 0, 0);
 scene.add(sunlight);
 const ambientLight = new THREE.AmbientLight(0x404040, 1); // Soft white light
+// consider difuse lighting so that the light bounces off multiple surfaces of the planets????
 scene.add(ambientLight);
 
 // Helper function to create planets
 function createPlanet(size, color, distanceFromSun, texture = null) {
     const geometry = new THREE.SphereGeometry(size, 32, 32);
     let material;
+
     if (texture) {
         const loader = new THREE.TextureLoader();
         material = new THREE.MeshStandardMaterial({ map: loader.load(texture) });
     } else {
         material = new THREE.MeshStandardMaterial({ color: color });
     }
+
     const planet = new THREE.Mesh(geometry, material);
     planet.position.x = distanceFromSun;
+
     return planet;
 }
 
 // Helper function to create rings
-function createRing(innerRadius, outerRadius, color, planet) {
-    const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 32);
-    const ringMaterial = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
-    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-    
-    // Position the ring to match the planet's position and rotate it to be perpendicular to the orbit
-    // Adjust the ring's rotation to be perpendicular
-    ring.rotation.x = Math.PI / 2;
+function createRing(planet, innerRadius, outerRadius, ringColor) {
+    const geometry = new THREE.RingGeometry(innerRadius, outerRadius, 32);
+    const material = new THREE.MeshBasicMaterial({ color: ringColor, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(geometry, material);
 
-    // Instead of positioning the ring, we attach it directly to the planet
+    // Set initial diagonal orientation
+    ring.rotation.x = Math.PI / 4; // Diagonal rotation
     planet.add(ring);
+
+    // Returning the ring so you can manipulate it outside the function
+    return ring;
 }
 
 // Helper function to add stars
@@ -86,30 +90,65 @@ const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 const sun = new THREE.Mesh(sunGeometry, sunMaterial);
 scene.add(sun);
 
+// Mercury
+const mercury = createPlanet(0.383, 0x909090, 7); // Size, color, and distance from Sun adjusted for visualization
+scene.add(mercury);
+
+// Venus
+const venus = createPlanet(0.949, 0xFFD700, 9); // Size, color, and distance from Sun adjusted for visualization
+scene.add(venus);
+
 // Earth
 const earthGeometry = new THREE.SphereGeometry(1, 32, 32);
 const earthMaterial = new THREE.MeshPhongMaterial({ color: 0x2233ff, specular: 0x555555, shininess: 15 });
 const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-earth.position.x = 10;
+earth.position.x = 13;
 scene.add(earth);
 
 // Moon
 const moonGeometry = new THREE.SphereGeometry(0.27, 32, 32);
 const moonMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
 const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-moon.position.x = 11.5;
+moon.position.x = earth.position.x + 1.5; // Keep the moon close to earth
 scene.add(moon);
 
 // Mars
-const mars = createPlanet(0.6, 0xFF4500, 15); // Using the `createPlanet` function
+const mars = createPlanet(0.6, 0xFF4500, 18); // Using the `createPlanet` function
 scene.add(mars);
 
-// Saturn
-const saturn = createPlanet(1.2, 0xF4C542, 25);
-scene.add(saturn);
+// Jupiter - Assuming you add Jupiter
+const jupiter = createPlanet(2.5, 0xB9A159, 26); // Example size and distance
+scene.add(jupiter);
 
-// Attach Saturn's Ring
-createRing(1.5, 2.2, 0x888888, saturn); // The ring is now a child of Saturn
+// Saturn
+const saturn = createPlanet(2.5, 0xF4C542, 34);
+scene.add(saturn);
+// Saturn's Ring
+const saturnRing = createRing(saturn, 3.0, 3.1, 0x888888);
+
+// Uranus
+const uranus = createPlanet(1.0, 0xD98BA, 44)
+scene.add(uranus);
+// Uranus ring 
+const uranusRing = createRing(uranus, 1.7, 1.8, 0x888888);
+
+// Neptune 
+const neptune = createPlanet(1.0, 0x07FFF, 53)
+scene.add(neptune);
+// Neptune Ring 
+const neptuneRing = createRing(neptune, 1.7, 1.8, 0x888888);
+
+// Pluto
+
+earth.name = 'earth';
+moon.name = 'moon';
+mercury.name = 'mercury';
+venus.name = 'venus';
+mars.name = 'mars';
+jupiter.name = 'jupiter';
+saturn.name = 'saturn';
+uranus.name = 'uranus';
+neptune.name = 'neptune';
 
 // OrbitControls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -118,30 +157,205 @@ controls.minDistance = 10;
 controls.maxDistance = 50;
 controls.minPolarAngle = 0;
 controls.maxPolarAngle = Math.PI / 2;
+controls.target.set(sun.position.x, sun.position.y, sun.position.z);
+
+const animationState = {
+    running: false,
+    progress: 0,
+    duration: 10000, // Duration of one orbit in milliseconds
+};
+
+// Helper function for bounding box calculations
+function calculateSceneBoundingBox() {
+    const boundingBox = new THREE.Box3();
+
+    scene.traverse(function (object) {
+        if (object.isMesh) {
+            object.geometry.computeBoundingBox();
+            boundingBox.expandByObject(object);
+        }
+    });
+
+    return boundingBox;
+}
+
+// Helper function to define the optimal camera position for the scene 
+function getOptimalCameraDistance(boundingBox) {
+    const size = new THREE.Vector3();
+    boundingBox.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * (Math.PI / 180);
+    let cameraZ = Math.abs(maxDim / 4 * Math.tan(fov * 2)); // Basic trigonometry
+    
+    cameraZ *= 2; // Adjust based on your scene requirements
+    return cameraZ;
+}
+
+// Helper function to calculate the updated FOV for zoom out 
+function calculateNewFOV(boundingBox, cameraPosition) {
+    const size = new THREE.Vector3();
+    boundingBox.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const distance = cameraPosition.distanceTo(boundingBox.getCenter(new THREE.Vector3()));
+
+    // Calculate the FOV required to fit the largest dimension
+    const fov = 2 * Math.atan(maxDim / (2 * distance)) * (180 / Math.PI); // Convert radians to degrees
+    return fov;
+}
+
+// Define orbital speeds relative to Earth; these are not accurate but serve to demonstrate the concept.
+// In reality, orbital speed is determined by a variety of factors including the distance from the Sun.
+const orbitalSpeeds = {
+    mercury: 4.15, // Completes an orbit much faster than Earth
+    venus: 1.62,
+    earth: 1, // Base speed
+    mars: 0.8,
+    jupiter: 0.43,
+    saturn: 0.32,
+    uranus: 0.22,
+    neptune: 0.18
+};
+
+// Define an object holding references to each planet
+const planets = {
+    mercury: mercury,
+    venus: venus,
+    earth: earth,
+    mars: mars,
+    jupiter: jupiter,
+    saturn: saturn,
+    uranus: uranus,
+    neptune: neptune,
+};
+
+const earthOrbitRadius = 10; // baseline for calculations
+const orbitRadii = {
+    mercury: earthOrbitRadius * 0.39,
+    venus: earthOrbitRadius * 0.72,
+    earth: earthOrbitRadius,
+    mars: earthOrbitRadius * 1.52,
+    jupiter: earthOrbitRadius * 5.20,
+    saturn: earthOrbitRadius * 9.58,
+    uranus: earthOrbitRadius * 19.22,
+    neptune: earthOrbitRadius * 30.05,
+};
+
+// Assuming you have already defined the planets objects somewhere
+planets.mercury.userData = { orbitRadius: orbitRadii.mercury, speedFactor: 4.15 };
+planets.venus.userData = { orbitRadius: orbitRadii.venus, speedFactor: 1.62 };
+planets.earth.userData = { orbitRadius: orbitRadii.earth, speedFactor: 1 };
+planets.mars.userData = { orbitRadius: orbitRadii.mars, speedFactor: 0.8 };
+planets.jupiter.userData = { orbitRadius: orbitRadii.jupiter, speedFactor: 0.43 };
+planets.saturn.userData = { orbitRadius: orbitRadii.saturn, speedFactor: 0.32 };
+planets.uranus.userData = { orbitRadius: orbitRadii.uranus, speedFactor: 0.22 };
+planets.neptune.userData = { orbitRadius: orbitRadii.neptune, speedFactor: 0.18 };
 
 function animate() {
     requestAnimationFrame(animate);
 
-    // Simple animation for Earth and Moon
-    earth.rotation.y += 0.005;
-    moon.rotation.y += 0.003;
-    moon.position.set(
-        earth.position.x + Math.cos(Date.now() * 0.001) * 2,
-        0,
-        Math.sin(Date.now() * 0.001) * 2
-    );
+    if (animationState.running) {
+        animationState.progress += 1000 / 60; // Increment based on 60 FPS
 
-    // Rotate Saturn (the ring, being a child, rotates with it)
-    saturn.rotation.y += 0.004;
+        // Ensure animation stops after a predefined period or once the slowest planet has made a visible orbit
+        if (animationState.progress >= animationState.duration) {
+            animationState.running = false;
+            animationState.progress = animationState.progress % animationState.duration; // Loop or reset logic
+        }
 
-    // Mars doesn't have a ring but let's keep it rotating for consistency
-    mars.rotation.y += 0.004;
+        // Orbital speeds (arbitrary units, smaller means faster)
+        const orbitalSpeeds = {
+            mercury: 4.15, // Completes an orbit faster
+            venus: 1.62,
+            earth: 1,
+            mars: 0.53,
+            jupiter: 0.084,
+            saturn: 0.034,
+            uranus: 0.012,
+            neptune: 0.006, // Completes an orbit slower
+        };
 
-    // Update controls
-    controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+        Object.keys(orbitalSpeeds).forEach(planetName => {
+            const planet = planets[planetName]; // Access from the planets object
+            if (!planet || !planet.userData) {
+                console.error('Missing userData for:', planetName);
+                return;
+            }
+            const orbitRadius = planet.userData.orbitRadius;
+            const speedFactor = orbitalSpeeds[planetName];
+            const planetProgress = (animationState.progress * speedFactor) % animationState.duration;
+            const progressRatio = planetProgress / animationState.duration;
+            const angle = progressRatio * 2 * Math.PI;
+        
+            planet.position.x = Math.cos(angle) * orbitRadius;
+            planet.position.z = Math.sin(angle) * orbitRadius;
+        });
+    }
 
-    // Render the scene with the bloom effect
+    // Static rotations for visual effect
+    rotatePlanetsAndMoons();
+
+    controls.update();
     composer.render();
 }
 
-animate();
+function updatePlanetPosition(planet, orbitRadius, progressRatio) {
+    const angle = progressRatio * 2 * Math.PI; // Complete orbit for each planet
+    planet.position.x = Math.cos(angle) * orbitRadius;
+    planet.position.z = Math.sin(angle) * orbitRadius;
+}
+
+function rotatePlanetsAndMoons() {
+    // Your existing rotation logic
+    // Earth and Moon rotation and Moon orbit
+    earth.rotation.y += 0.005;
+    moon.rotation.y += 0.003;
+    if (!animationState.running) { // Only update Moon's orbit from here if not animating orbit
+        moon.position.set(
+            earth.position.x + Math.cos(Date.now() * 0.001) * 2,
+            0,
+            earth.position.z + Math.sin(Date.now() * 0.001) * 2
+        );
+    }
+
+    // Rotate Saturn and its ring
+    saturnRing.rotation.y += 0.01;
+    saturn.rotation.y += 0.004;
+
+    // Rotate Mars
+    mars.rotation.y += 0.004;
+
+    // Rotate Neptune and Uranus
+    neptune.rotation.y += 0.004;
+    uranus.rotation.y += 0.004;
+
+    // Rotate rings of Neptune and Uranus
+    uranusRing.rotation.y += 0.01;
+    neptuneRing.rotation.y += 0.01;
+}
+
+
+document.getElementById('zoomOutButton').addEventListener('click', function () {
+    const boundingBox = calculateSceneBoundingBox();
+    const distance = getOptimalCameraDistance(boundingBox);
+    const center = new THREE.Vector3();
+    boundingBox.getCenter(center);
+
+    // Adjust the camera position
+    camera.position.set(center.x, center.y, distance);
+    controls.target.set(center.x, center.y, 0);
+
+    // Calculate and set the new FOV
+    const newFOV = calculateNewFOV(boundingBox, camera.position);
+    camera.fov = newFOV;
+    camera.updateProjectionMatrix(); // Important to apply the new FOV
+
+    controls.update();
+});
+
+document.getElementById('startAnimationButton').addEventListener('click', function () {
+    animationState.progress = 0;
+    animationState.running = true;
+});
+
+requestAnimationFrame(animate);
+// animate();
