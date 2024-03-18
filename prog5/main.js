@@ -206,14 +206,14 @@ function calculateNewFOV(boundingBox, cameraPosition) {
 // Define orbital speeds relative to Earth; these are not accurate but serve to demonstrate the concept.
 // In reality, orbital speed is determined by a variety of factors including the distance from the Sun.
 const orbitalSpeeds = {
-    mercury: 4.15, // Completes an orbit much faster than Earth
-    venus: 1.62,
+    mercury: 2.15, // Completes an orbit much faster than Earth
+    venus: 1.32,
     earth: 1, // Base speed
     mars: 0.8,
-    jupiter: 0.43,
-    saturn: 0.32,
-    uranus: 0.22,
-    neptune: 0.18
+    jupiter: 0.73,
+    saturn: 0.52,
+    uranus: 0.32,
+    neptune: 0.28
 };
 
 // Define an object holding references to each planet
@@ -250,17 +250,28 @@ planets.saturn.userData = { orbitRadius: orbitRadii.saturn, speedFactor: 0.32 };
 planets.uranus.userData = { orbitRadius: orbitRadii.uranus, speedFactor: 0.22 };
 planets.neptune.userData = { orbitRadius: orbitRadii.neptune, speedFactor: 0.18 };
 
+// Global variable to control the animation state
+let animationRunning = false; // Assume animation is stopped initially
+
+function startAnimation() {
+    if (!animationRunning) {
+        animationRunning = true;
+        animate(); // Only call animate() if it's not already running
+    }
+}
+
+function stopAnimation() {
+    animationRunning = false; // This will stop the animation loop on the next frame
+}
+
 function animate() {
     requestAnimationFrame(animate);
 
-    if (animationState.running) {
+    if (animationRunning) {
         animationState.progress += 1000 / 60; // Increment based on 60 FPS
 
-        // Ensure animation stops after a predefined period or once the slowest planet has made a visible orbit
-        if (animationState.progress >= animationState.duration) {
-            animationState.running = false;
-            animationState.progress = animationState.progress % animationState.duration; // Loop or reset logic
-        }
+        // Instead of stopping the animation, you might want to loop the progress.
+        //animationState.progress = animationState.progress % animationState.duration; // Loop logic
 
         // Orbital speeds (arbitrary units, smaller means faster)
         const orbitalSpeeds = {
@@ -298,12 +309,6 @@ function animate() {
     composer.render();
 }
 
-function updatePlanetPosition(planet, orbitRadius, progressRatio) {
-    const angle = progressRatio * 2 * Math.PI; // Complete orbit for each planet
-    planet.position.x = Math.cos(angle) * orbitRadius;
-    planet.position.z = Math.sin(angle) * orbitRadius;
-}
-
 function rotatePlanetsAndMoons() {
     // Your existing rotation logic
     // Earth and Moon rotation and Moon orbit
@@ -333,7 +338,6 @@ function rotatePlanetsAndMoons() {
     neptuneRing.rotation.y += 0.01;
 }
 
-
 document.getElementById('zoomOutButton').addEventListener('click', function () {
     const boundingBox = calculateSceneBoundingBox();
     const distance = getOptimalCameraDistance(boundingBox);
@@ -352,9 +356,15 @@ document.getElementById('zoomOutButton').addEventListener('click', function () {
     controls.update();
 });
 
-document.getElementById('startAnimationButton').addEventListener('click', function () {
-    animationState.progress = 0;
-    animationState.running = true;
+// Start Animation Button
+document.getElementById('startButton').addEventListener('click', function() {
+    animationRunning = true; // Assuming animationRunning is a global variable controlling the animation
+    animate(); // Start the animation if not already running
+});
+
+// Stop Animation Button
+document.getElementById('stopButton').addEventListener('click', function() {
+    animationRunning = false; // This will stop the animation loop
 });
 
 requestAnimationFrame(animate);
