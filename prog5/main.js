@@ -27,62 +27,88 @@ composer.addPass(renderScene);
 composer.addPass(bloomPass);
 
 // Lighting
-const sunlight = new THREE.PointLight(0xffffff, 2, 100);
-sunlight.position.set(0, 0, 0);
-scene.add(sunlight);
-const ambientLight = new THREE.AmbientLight(0x404040, 1); // Soft white light
-// consider difuse lighting so that the light bounces off multiple surfaces of the planets????
+const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+sunLight.position.set(-100, 0, 100);
+sunLight.castShadow = true;
+scene.add(sunLight);
+
+const ambientLight = new THREE.AmbientLight(0x333333); // Soft white light
 scene.add(ambientLight);
 
-// Helper function to create planets
-function createPlanet(size, color, distanceFromSun, texture = null) {
-    const geometry = new THREE.SphereGeometry(size, 32, 32);
-    let material;
+// Add stars
+const starsGeometry = new THREE.BufferGeometry();
+const starsMaterial = new THREE.PointsMaterial({ color: 0x888888 });
+const starsVertices = [];
 
-    if (texture) {
-        const loader = new THREE.TextureLoader();
-        material = new THREE.MeshStandardMaterial({ map: loader.load(texture) });
-    } else {
-        material = new THREE.MeshStandardMaterial({ color: color });
-    }
+for (let i = 0; i < 10000; i++) {
+    const x = THREE.MathUtils.randFloatSpread(2000);
+    const y = THREE.MathUtils.randFloatSpread(2000);
+    const z = THREE.MathUtils.randFloatSpread(2000);
 
-    const planet = new THREE.Mesh(geometry, material);
-    planet.position.x = distanceFromSun;
-
-    return planet;
+    starsVertices.push(x, y, z);
 }
 
-// Helper function to create rings
-function createRing(planet, innerRadius, outerRadius, ringColor) {
-    const geometry = new THREE.RingGeometry(innerRadius, outerRadius, 32);
-    const material = new THREE.MeshBasicMaterial({ color: ringColor, side: THREE.DoubleSide });
-    const ring = new THREE.Mesh(geometry, material);
+starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
 
-    // Set initial diagonal orientation
-    ring.rotation.x = Math.PI / 4; // Diagonal rotation
-    planet.add(ring);
+const starField = new THREE.Points(starsGeometry, starsMaterial);
+scene.add(starField);
 
-    // Returning the ring so you can manipulate it outside the function
-    return ring;
-}
+// Mercury
+const mercuryMaterial = new THREE.MeshPhongMaterial({
+    color: 0x909090, // Grayish
+    specular: 0x222222,
+    shininess: 10
+});
 
-// Helper function to add stars
-function addStars() {
-    const starsGeometry = new THREE.SphereGeometry(0.1, 24, 24);
-    const starsMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const stars = new THREE.Group();
+// Venus
+const venusMaterial = new THREE.MeshPhongMaterial({
+    color: 0xffd28e, // Creamy brown
+    specular: 0x444444,
+    shininess: 5
+});
 
-    for (let i = 0; i < 1000; i++) {
-        const star = new THREE.Mesh(starsGeometry, starsMaterial);
-        const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(200)); // Spread them out
-        star.position.set(x, y, z);
-        stars.add(star);
-    }
+// Earth
+const earthMaterial = new THREE.MeshPhongMaterial({
+    color: 0x2233ff, // Blueish
+    specular: 0x555555,
+    shininess: 5
+});
 
-    scene.add(stars);
-}
+// Mars
+const marsMaterial = new THREE.MeshPhongMaterial({
+    color: 0xff5733, // Reddish
+    specular: 0x222222,
+    shininess: 10
+});
 
-addStars(); // Call function to add stars
+// Jupiter
+const jupiterMaterial = new THREE.MeshPhongMaterial({
+    color: 0xc8a415, // Brownish yellow
+    specular: 0x666666,
+    shininess: 5
+});
+
+// Saturn
+const saturnMaterial = new THREE.MeshPhongMaterial({
+    color: 0xe2bd75, // Pale gold
+    specular: 0x444444,
+    shininess: 5
+});
+
+// Uranus
+const uranusMaterial = new THREE.MeshPhongMaterial({
+    color: 0x66ccff, // Light blue
+    specular: 0x555555,
+    shininess: 5
+});
+
+// Neptune
+const neptuneMaterial = new THREE.MeshPhongMaterial({
+    color: 0x3366ff, // Deep blue
+    specular: 0x222222,
+    shininess: 5
+});
+
 
 // Sun
 const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
@@ -100,7 +126,7 @@ scene.add(venus);
 
 // Earth
 const earthGeometry = new THREE.SphereGeometry(1, 32, 32);
-const earthMaterial = new THREE.MeshPhongMaterial({ color: 0x2233ff, specular: 0x555555, shininess: 15 });
+// const earthMaterial = new THREE.MeshPhongMaterial({ color: 0x2233ff, specular: 0x555555, shininess: 15 });
 const earth = new THREE.Mesh(earthGeometry, earthMaterial);
 earth.position.x = 13;
 scene.add(earth);
@@ -165,6 +191,39 @@ const animationState = {
     duration: 10000, // Duration of one orbit in milliseconds
 };
 
+// Helper function to create planets
+function createPlanet(size, color, distanceFromSun, texture = null) {
+    const geometry = new THREE.SphereGeometry(size, 32, 32);
+    let material;
+
+    if (texture) {
+        const loader = new THREE.TextureLoader();
+        material = new THREE.MeshStandardMaterial({ map: loader.load(texture) });
+    } else {
+        material = new THREE.MeshStandardMaterial({ color: color });
+    }
+
+    const planet = new THREE.Mesh(geometry, material);
+    planet.position.x = distanceFromSun;
+
+    return planet;
+}
+
+// Helper function to create rings
+function createRing(planet, innerRadius, outerRadius, ringColor) {
+    const geometry = new THREE.RingGeometry(innerRadius, outerRadius, 32);
+    const material = new THREE.MeshBasicMaterial({ color: ringColor, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(geometry, material);
+
+    // Set initial diagonal orientation
+    ring.rotation.x = Math.PI / 4; // Diagonal rotation
+    planet.add(ring);
+
+    // Returning the ring so you can manipulate it outside the function
+    return ring;
+}
+
+
 // Helper function for bounding box calculations
 function calculateSceneBoundingBox() {
     const boundingBox = new THREE.Box3();
@@ -203,19 +262,6 @@ function calculateNewFOV(boundingBox, cameraPosition) {
     return fov;
 }
 
-// Define orbital speeds relative to Earth; these are not accurate but serve to demonstrate the concept.
-// In reality, orbital speed is determined by a variety of factors including the distance from the Sun.
-const orbitalSpeeds = {
-    mercury: 2.15, // Completes an orbit much faster than Earth
-    venus: 1.32,
-    earth: 1, // Base speed
-    mars: 0.8,
-    jupiter: 0.73,
-    saturn: 0.52,
-    uranus: 0.32,
-    neptune: 0.28
-};
-
 // Define an object holding references to each planet
 const planets = {
     mercury: mercury,
@@ -230,39 +276,27 @@ const planets = {
 
 const earthOrbitRadius = 10; // baseline for calculations
 const orbitRadii = {
-    mercury: earthOrbitRadius * 0.39,
+    mercury: earthOrbitRadius * 0.39, // Closer to the current scale
     venus: earthOrbitRadius * 0.72,
     earth: earthOrbitRadius,
     mars: earthOrbitRadius * 1.52,
-    jupiter: earthOrbitRadius * 5.20,
-    saturn: earthOrbitRadius * 9.58,
-    uranus: earthOrbitRadius * 19.22,
-    neptune: earthOrbitRadius * 30.05,
+    jupiter: earthOrbitRadius * 2.0, // Adjusted to be closer
+    saturn: earthOrbitRadius * 3.0, // Adjusted to be closer
+    uranus: earthOrbitRadius * 4.0, // Adjusted to be closer
+    neptune: earthOrbitRadius * 5.0, // Adjusted to be closer
 };
 
-// Assuming you have already defined the planets objects somewhere
-planets.mercury.userData = { orbitRadius: orbitRadii.mercury, speedFactor: 4.15 };
-planets.venus.userData = { orbitRadius: orbitRadii.venus, speedFactor: 1.62 };
+planets.mercury.userData = { orbitRadius: orbitRadii.mercury, speedFactor: 2.15 };
+planets.venus.userData = { orbitRadius: orbitRadii.venus, speedFactor: 1.32 };
 planets.earth.userData = { orbitRadius: orbitRadii.earth, speedFactor: 1 };
 planets.mars.userData = { orbitRadius: orbitRadii.mars, speedFactor: 0.8 };
-planets.jupiter.userData = { orbitRadius: orbitRadii.jupiter, speedFactor: 0.43 };
-planets.saturn.userData = { orbitRadius: orbitRadii.saturn, speedFactor: 0.32 };
-planets.uranus.userData = { orbitRadius: orbitRadii.uranus, speedFactor: 0.22 };
-planets.neptune.userData = { orbitRadius: orbitRadii.neptune, speedFactor: 0.18 };
+planets.jupiter.userData = { orbitRadius: orbitRadii.jupiter, speedFactor: 0.73 };
+planets.saturn.userData = { orbitRadius: orbitRadii.saturn, speedFactor: 0.52 };
+planets.uranus.userData = { orbitRadius: orbitRadii.uranus, speedFactor: 0.32 };
+planets.neptune.userData = { orbitRadius: orbitRadii.neptune, speedFactor: 0.28 };
 
 // Global variable to control the animation state
 let animationRunning = false; // Assume animation is stopped initially
-
-function startAnimation() {
-    if (!animationRunning) {
-        animationRunning = true;
-        animate(); // Only call animate() if it's not already running
-    }
-}
-
-function stopAnimation() {
-    animationRunning = false; // This will stop the animation loop on the next frame
-}
 
 function animate() {
     requestAnimationFrame(animate);
@@ -270,19 +304,18 @@ function animate() {
     if (animationRunning) {
         animationState.progress += 1000 / 60; // Increment based on 60 FPS
 
-        // Instead of stopping the animation, you might want to loop the progress.
-        //animationState.progress = animationState.progress % animationState.duration; // Loop logic
-
+        // Define orbital speeds relative to Earth; these are not accurate but serve to demonstrate the concept.
+        // In reality, orbital speed is determined by a variety of factors including the distance from the Sun.
         // Orbital speeds (arbitrary units, smaller means faster)
         const orbitalSpeeds = {
-            mercury: 4.15, // Completes an orbit faster
-            venus: 1.62,
-            earth: 1,
-            mars: 0.53,
-            jupiter: 0.084,
-            saturn: 0.034,
-            uranus: 0.012,
-            neptune: 0.006, // Completes an orbit slower
+            mercury: 2.15, // Completes an orbit faster
+            venus: 1.32,
+            earth: 1, // Base speed
+            mars: 0.8,
+            jupiter: 0.73,
+            saturn: 0.52,
+            uranus: 0.32,
+            neptune: 0.28, // Completes an orbit slower
         };
 
         Object.keys(orbitalSpeeds).forEach(planetName => {
@@ -368,4 +401,3 @@ document.getElementById('stopButton').addEventListener('click', function() {
 });
 
 requestAnimationFrame(animate);
-// animate();
